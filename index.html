@@ -6,22 +6,14 @@
 <title>Typing Race — Learn to Code by Typing</title>
 <style>
   :root {
-    --bg: #0f1117;
-    --panel: #181b24;
-    --text: #d4d8e2;
-    --dim: #5a6173;
-    --pending: #4a5066;
-    --correct: #5fd98a;
-    --incorrect: #ff6b6b;
-    --accent: #ffb454;
-    --accent-dim: #3a3326;
-    --shadow: rgba(0,0,0,0.4);
+    --bg: #0f1117; --panel: #181b24; --text: #d4d8e2; --dim: #5a6173;
+    --pending: #4a5066; --correct: #5fd98a; --incorrect: #ff6b6b;
+    --accent: #ffb454; --accent-dim: #3a3326; --shadow: rgba(0,0,0,0.4);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
   body {
-    background: var(--bg);
-    color: var(--text);
+    background: var(--bg); color: var(--text);
     font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
     display: flex; align-items: center; justify-content: center;
     min-height: 100vh; padding: 20px; -webkit-font-smoothing: antialiased;
@@ -38,8 +30,7 @@
   .row { display: flex; gap: 9px; justify-content: center; margin-bottom: 18px; flex-wrap: wrap; }
   .opt-btn {
     background: transparent; border: 1.5px solid var(--pending); color: var(--text);
-    padding: 9px 16px; border-radius: 10px; font-family: inherit; font-size: 0.9rem;
-    cursor: pointer; transition: all 0.15s ease;
+    padding: 9px 16px; border-radius: 10px; font-family: inherit; font-size: 0.9rem; cursor: pointer; transition: all 0.15s ease;
   }
   .opt-btn:hover { border-color: var(--accent); }
   .opt-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); font-weight: 700; }
@@ -51,15 +42,41 @@
   .btn-primary:hover { filter: brightness(1.08); }
   .btn-primary:active { transform: scale(0.98); }
   .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; filter: none; transform: none; }
+  .btn-ghost {
+    display: block; width: 100%; background: transparent; border: 1.5px solid var(--pending); color: var(--dim);
+    padding: 11px; border-radius: 10px; font-family: inherit; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+    transition: all 0.15s ease; margin-top: 10px;
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
   .nav-row { display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: 10px; margin-top: 6px; }
   .nav-row .btn-primary { margin-top: 0; }
   .btn-sec {
     background: transparent; border: 1.5px solid var(--pending); color: var(--text);
-    padding: 14px 8px; border-radius: 10px; font-family: inherit; font-size: 0.95rem; font-weight: 700;
-    cursor: pointer; transition: all 0.15s ease;
+    padding: 14px 8px; border-radius: 10px; font-family: inherit; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: all 0.15s ease;
   }
   .btn-sec:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
   .btn-sec:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* Lesson menu */
+  .menu-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+  .menu-back { background: transparent; border: none; color: var(--dim); font-family: inherit; font-size: 0.9rem; cursor: pointer; padding: 6px 0; }
+  .menu-back:hover { color: var(--accent); }
+  .menu-title { font-size: 1.15rem; font-weight: 700; }
+  .menu-count { color: var(--dim); font-size: 0.8rem; }
+  .menu-list { display: flex; flex-direction: column; gap: 8px; max-height: 52vh; overflow-y: auto; padding-right: 4px; }
+  .menu-list::-webkit-scrollbar { width: 8px; }
+  .menu-list::-webkit-scrollbar-thumb { background: #2a2f3d; border-radius: 4px; }
+  .lesson-item {
+    display: flex; gap: 12px; align-items: center; text-align: left; width: 100%;
+    background: #1f232f; border: 1.5px solid transparent; border-radius: 10px; padding: 11px 14px;
+    cursor: pointer; font-family: inherit; color: var(--text); transition: all 0.12s ease;
+  }
+  .lesson-item:hover { border-color: var(--accent); background: #262b38; }
+  .lesson-item.all { background: var(--accent-dim); border-color: #5a4a26; }
+  .li-num { width: 26px; text-align: center; color: var(--accent); font-weight: 700; flex-shrink: 0; font-size: 0.95rem; }
+  .li-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .li-title { font-weight: 700; font-size: 0.92rem; }
+  .li-sub { font-size: 0.76rem; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* HUD */
   .hud { display: flex; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
@@ -70,8 +87,7 @@
   /* Concept banner */
   .concept {
     display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
-    margin-bottom: 14px; padding: 9px 14px; background: #1f232f;
-    border-left: 3px solid var(--accent); border-radius: 8px;
+    margin-bottom: 14px; padding: 9px 14px; background: #1f232f; border-left: 3px solid var(--accent); border-radius: 8px;
     cursor: pointer; user-select: none; transition: background 0.15s ease;
   }
   .concept:hover { background: #262b38; }
@@ -79,16 +95,11 @@
   .concept .c-name { color: var(--text); font-weight: 700; font-size: 0.95rem; }
   .concept .c-info { color: var(--accent); font-size: 0.72rem; }
   .concept .c-meta { color: var(--dim); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
-  .explain {
-    margin: -6px 0 14px; padding: 10px 14px; background: #15181f;
-    border: 1px solid var(--pending); border-left: 3px solid var(--accent);
-    border-radius: 8px; color: var(--text); font-size: 0.84rem; line-height: 1.55;
-  }
+  .explain { margin: -6px 0 14px; padding: 10px 14px; background: #15181f; border: 1px solid var(--pending); border-left: 3px solid var(--accent); border-radius: 8px; color: var(--text); font-size: 0.84rem; line-height: 1.55; }
 
   /* Stream */
   .stream {
-    position: relative; font-size: 1.15rem; line-height: 1.95rem;
-    white-space: pre-wrap; word-break: break-word; tab-size: 2;
+    position: relative; font-size: 1.15rem; line-height: 1.95rem; white-space: pre-wrap; word-break: break-word; tab-size: 2;
     height: 14.3rem; overflow: hidden; color: var(--pending); text-align: left; user-select: none;
   }
   .stream.english { font-size: 1.45rem; line-height: 2.1rem; letter-spacing: 0.5px; }
@@ -99,11 +110,9 @@
   .ch.nl.ok { color: var(--correct); opacity: 0.45; }
   .ch.caret { border-left: 2px solid var(--accent); margin-left: -2px; animation: blink 1s steps(1) infinite; }
   @keyframes blink { 50% { border-color: transparent; } }
-
   .capture { position: absolute; opacity: 0; pointer-events: none; left: -9999px; }
   .shake { animation: shake 0.16s ease; }
   @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
-
   .hint { text-align: center; color: var(--dim); font-size: 0.78rem; margin-top: 16px; }
   .hint kbd { background: #232733; border: 1px solid var(--pending); border-radius: 4px; padding: 1px 6px; font-size: 0.72rem; color: var(--text); }
 
@@ -122,17 +131,16 @@
 <body>
 <div class="app">
   <h1>Typing<span class="accent">Race</span> <span style="font-size:1rem;color:var(--dim)">/dev</span></h1>
-  <div class="subtitle">Practice typing and code together — beginner to advanced.</div>
+  <div class="subtitle">Practice typing and learn to code — beginner to advanced.</div>
 
-  <!-- START -->
-  <div class="panel" id="startPanel">
+  <!-- SETUP -->
+  <div class="panel" id="setupPanel">
     <div class="label">Mode</div>
     <div class="row" id="modes">
-      <button class="opt-btn active" data-mode="code">&lt;/&gt; Code</button>
+      <button class="opt-btn active" data-mode="code">&lt;/&gt; Code lessons</button>
       <button class="opt-btn" data-mode="english">English words</button>
     </div>
-
-    <div id="codeOpts">
+    <div id="langWrap">
       <div class="label">Language</div>
       <div class="row" id="langs">
         <button class="opt-btn active" data-lang="python">Python</button>
@@ -142,22 +150,8 @@
         <button class="opt-btn" data-lang="javascript">JavaScript</button>
         <button class="opt-btn" data-lang="mix">Mix all</button>
       </div>
-
-      <div class="label">Level</div>
-      <div class="row" id="levels">
-        <button class="opt-btn active" data-level="beginner">Beginner</button>
-        <button class="opt-btn" data-level="intermediate">Intermediate</button>
-        <button class="opt-btn" data-level="advanced">Advanced</button>
-        <button class="opt-btn" data-level="all">All</button>
-      </div>
-
-      <div id="lessonWrap">
-        <div class="label">Lesson</div>
-        <div class="row" id="lessons"></div>
-      </div>
     </div>
-
-    <div id="timeWrap">
+    <div id="timeWrap" class="hidden">
       <div class="label">Time</div>
       <div class="row" id="durations">
         <button class="opt-btn" data-sec="15">15s</button>
@@ -166,13 +160,30 @@
         <button class="opt-btn" data-sec="120">120s</button>
       </div>
     </div>
-    <button class="btn-primary" id="startBtn">Start typing</button>
+    <button class="btn-primary" id="startBtn">Choose a lesson &nbsp;→</button>
+  </div>
+
+  <!-- LESSON MENU -->
+  <div class="panel hidden" id="menuPanel">
+    <div class="menu-head">
+      <button class="menu-back" id="menuBack">←&nbsp;Back</button>
+      <div style="text-align:right">
+        <div class="menu-title" id="menuTitle">Python</div>
+        <div class="menu-count" id="menuCount"></div>
+      </div>
+    </div>
+    <div class="row" id="menuLevels">
+      <button class="opt-btn active" data-level="beginner">Beginner</button>
+      <button class="opt-btn" data-level="intermediate">Intermediate</button>
+      <button class="opt-btn" data-level="advanced">Advanced</button>
+    </div>
+    <div class="menu-list" id="menuList"></div>
   </div>
 
   <!-- GAME -->
   <div class="panel hidden" id="gamePanel">
     <div class="hud">
-      <div class="stat"><div class="val" id="hudTime">30</div><div class="key">Time</div></div>
+      <div class="stat"><div class="val" id="hudTime">0</div><div class="key">Time</div></div>
       <div class="stat"><div class="val" id="hudWpm">0</div><div class="key">WPM</div></div>
       <div class="stat"><div class="val" id="hudAcc">100%</div><div class="key">Accuracy</div></div>
       <div class="stat"><div class="val" id="hudChars">0</div><div class="key">Chars</div></div>
@@ -184,7 +195,7 @@
     <div class="explain hidden" id="conceptExplain"></div>
     <div class="stream" id="stream"></div>
     <input class="capture" id="capture" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-    <div class="hint" id="gameHint">Just start typing &nbsp;·&nbsp; <kbd>Enter</kbd> new line &nbsp;·&nbsp; indent auto-skips &nbsp;·&nbsp; <kbd>Esc</kbd> restart</div>
+    <div class="hint" id="gameHint"></div>
   </div>
 
   <!-- RESULTS -->
@@ -202,527 +213,113 @@
       <button class="btn-sec" id="tryAgainBtn">↻&nbsp;Try Again</button>
       <button class="btn-primary" id="nextBtn">Next&nbsp;→</button>
     </div>
-    <div class="hint" id="resultHint" style="margin-top:14px">Press <kbd>Enter</kbd> or <kbd>Esc</kbd> to replay</div>
+    <button class="btn-ghost hidden" id="menuBtn">☰&nbsp;All lessons</button>
+    <div class="hint" id="resultHint" style="margin-top:14px"></div>
   </div>
 </div>
 
+<script type="application/json" id="curriculumData">{"python":{"beginner":[{"title":"Print output","code":"print(\"Hello, world!\")","explain":"The print function displays text or values on the screen."},{"title":"Variables","code":"name = \"Ada\"\nage = 36\nprint(name, age)","explain":"Variables store values under a name you can reuse later."},{"title":"Numbers and arithmetic","code":"total = 7 + 3 * 2\nremainder = 17 % 5\nprint(total, remainder)","explain":"Python does math with operators, following normal order of operations."},{"title":"Strings","code":"greeting = \"Hello\"\nshout = greeting.upper()\nprint(shout)","explain":"Strings are text values, and string methods can transform them."},{"title":"f-strings","code":"name = \"Sam\"\nage = 9\nprint(f\"{name} is {age} years old\")","explain":"f-strings let you insert variables directly inside text using braces."},{"title":"Split and join","code":"csv = \"a,b,c\"\nparts = csv.split(\",\")\nprint(\"-\".join(parts))","explain":"split breaks a string into a list and join glues a list back into a string."},{"title":"Booleans and comparison","code":"x = 10\nis_big = x > 5\nprint(is_big, x == 10)","explain":"Comparisons produce boolean values, either True or False."},{"title":"User input","code":"name = input(\"Your name: \")\nprint(f\"Hi, {name}!\")","explain":"The input function reads text typed by the user as a string."},{"title":"Type conversion","code":"age_text = \"42\"\nage = int(age_text)\nprint(age + 1)","explain":"Functions like int and str convert values between types."},{"title":"if / elif / else","code":"score = 75\nif score >= 90:\n    print(\"A\")\nelif score >= 60:\n    print(\"Pass\")\nelse:\n    print(\"Fail\")","explain":"Conditional statements run different code depending on what is true."},{"title":"Logical operators","code":"age = 20\nif age >= 18 and age < 65:\n    print(\"Adult\")","explain":"The and, or, and not keywords combine boolean conditions."},{"title":"Ternary expression","code":"n = 7\nlabel = \"even\" if n % 2 == 0 else \"odd\"\nprint(label)","explain":"A ternary expression picks one of two values based on a condition in one line."},{"title":"Lists","code":"fruits = [\"apple\", \"pear\", \"plum\"]\nfruits.append(\"kiwi\")\nprint(fruits[0], len(fruits))","explain":"Lists hold an ordered collection of items you can index and change."},{"title":"List slicing","code":"nums = [10, 20, 30, 40, 50]\nprint(nums[1:4])\nprint(nums[::-1])","explain":"Slicing extracts a portion of a list using start, stop, and step."},{"title":"for loop","code":"for fruit in [\"apple\", \"pear\", \"plum\"]:\n    print(fruit)","explain":"A for loop repeats an action for each item in a collection."},{"title":"range","code":"for i in range(1, 5):\n    print(i)","explain":"The range function generates a sequence of numbers to loop over."},{"title":"while loop","code":"count = 3\nwhile count > 0:\n    print(count)\n    count -= 1","explain":"A while loop repeats as long as its condition stays True."},{"title":"Dictionaries","code":"person = {\"name\": \"Eve\", \"age\": 30}\nprint(person[\"name\"])\nperson[\"city\"] = \"Paris\"","explain":"Dictionaries store data as key-value pairs you look up by key."},{"title":"Loop over a dict","code":"scores = {\"math\": 90, \"art\": 85}\nfor subject, score in scores.items():\n    print(subject, score)","explain":"The items method lets you loop over keys and values together."},{"title":"Functions","code":"def greet(name):\n    return f\"Hello, {name}!\"\nprint(greet(\"Ada\"))","explain":"Functions package reusable code that takes inputs and returns a result."},{"title":"Default arguments","code":"def power(base, exp=2):\n    return base ** exp\nprint(power(5), power(2, 3))","explain":"Default argument values are used when no value is passed in."},{"title":"List comprehension","code":"squares = [n * n for n in range(1, 6)]\nprint(squares)","explain":"A list comprehension builds a new list from a loop in one line."}],"intermediate":[{"title":"Filtered comprehension","code":"nums = range(10)\nevens = [n for n in nums if n % 2 == 0]\nprint(evens)","explain":"Adding an if clause to a comprehension keeps only the items that match a condition."},{"title":"Dict comprehension","code":"words = [\"hi\", \"hey\", \"hello\"]\nlengths = {w: len(w) for w in words}\nprint(lengths)","explain":"A dict comprehension builds a dictionary by computing a key and value for each item."},{"title":"Set basics","code":"nums = [1, 2, 2, 3, 3, 3]\nunique = set(nums)\nprint(unique, 2 in unique)","explain":"A set stores unique items and tests membership quickly."},{"title":"Unpacking","code":"point = (3, 7)\nx, y = point\nfirst, *rest = [1, 2, 3, 4]\nprint(x, y, rest)","explain":"Unpacking assigns elements of a sequence to multiple variables, with * capturing the remainder."},{"title":"enumerate","code":"colors = [\"red\", \"green\", \"blue\"]\nfor i, color in enumerate(colors):\n    print(i, color)","explain":"enumerate yields each item alongside its index, avoiding manual counter variables."},{"title":"zip","code":"names = [\"Ada\", \"Linus\"]\nscores = [95, 88]\nfor name, score in zip(names, scores):\n    print(name, score)","explain":"zip pairs up items from multiple iterables so you can loop over them together."},{"title":"sorted with key","code":"words = [\"pear\", \"fig\", \"apple\"]\nprint(sorted(words, key=len))\nprint(sorted(words, reverse=True))","explain":"sorted returns a new ordered list, with key choosing what to compare and reverse flipping the order."},{"title":"any and all","code":"nums = [2, 4, 6]\nprint(all(n % 2 == 0 for n in nums))\nprint(any(n > 5 for n in nums))","explain":"all is True when every item passes and any is True when at least one does."},{"title":"args and kwargs","code":"def total(*args, **kwargs):\n    return sum(args) + sum(kwargs.values())\nprint(total(1, 2, x=3))","explain":"*args and **kwargs let a function accept any number of positional and keyword arguments."},{"title":"Lambda and sort key","code":"pairs = [(\"b\", 2), (\"a\", 3), (\"c\", 1)]\npairs.sort(key=lambda p: p[1])\nprint(pairs)","explain":"A lambda is a small anonymous function, here used as a sort key to order by the second element."},{"title":"map and filter","code":"nums = [1, 2, 3, 4]\ndoubled = list(map(lambda n: n * 2, nums))\nodds = list(filter(lambda n: n % 2, nums))\nprint(doubled, odds)","explain":"map applies a function to every item while filter keeps items where the function is truthy."},{"title":"Dict get for counting","code":"counts = {}\nfor ch in \"banana\":\n    counts[ch] = counts.get(ch, 0) + 1\nprint(counts)","explain":"dict.get returns a default when a key is missing, making counters and lookups safe."},{"title":"Exception handling","code":"try:\n    value = int(\"abc\")\nexcept ValueError as err:\n    print(\"bad input:\", err)","explain":"try/except catches errors so the program can recover instead of crashing."},{"title":"with statement","code":"with open(\"data.txt\", \"w\") as f:\n    f.write(\"hello\\n\")","explain":"The with statement opens a resource and guarantees it is closed cleanly afterward."},{"title":"Class with __init__","code":"class Dog:\n    def __init__(self, name):\n        self.name = name\n    def speak(self):\n        return f\"{self.name} says woof\"\nprint(Dog(\"Rex\").speak())","explain":"A class bundles data and behavior, with __init__ setting up each new instance's attributes."}],"advanced":[{"title":"Generator function","code":"def countdown(n):\n    while n > 0:\n        yield n\n        n -= 1","explain":"A generator uses yield to produce values lazily, one at a time, without building a full list in memory."},{"title":"Generator expression","code":"total = sum(x * x for x in range(1000))","explain":"A generator expression computes values on demand inside parentheses, saving memory compared to a list comprehension."},{"title":"Walrus operator","code":"data = [1, 2, 3, 4, 5]\nif (n := len(data)) > 3:\n    print(f\"{n} items\")","explain":"The walrus operator assigns a value inside an expression so you can use and test it at once."},{"title":"Closure","code":"def multiplier(factor):\n    def multiply(n):\n        return n * factor\n    return multiply","explain":"A closure is an inner function that remembers and uses variables from its enclosing scope after the outer function returns."},{"title":"Decorator","code":"def timed(func):\n    def wrapper(*args, **kwargs):\n        return func(*args, **kwargs)\n    return wrapper","explain":"A decorator wraps a function to extend its behavior without changing the original function's code."},{"title":"functools.wraps","code":"import functools\n\ndef logged(func):\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n        return func(*args, **kwargs)\n    return wrapper","explain":"@functools.wraps copies the wrapped function's name and docstring onto the wrapper so introspection still works."},{"title":"Property","code":"class Circle:\n    def __init__(self, r):\n        self._r = r\n\n    @property\n    def area(self):\n        return 3.14159 * self._r ** 2","explain":"@property lets you access a computed method like an attribute, without calling it with parentheses."},{"title":"Dunder methods","code":"class Vector:\n    def __init__(self, x):\n        self.x = x\n\n    def __add__(self, other):\n        return Vector(self.x + other.x)","explain":"Dunder (double-underscore) methods like __add__ let your objects support built-in operators such as +."},{"title":"Dataclass","code":"from dataclasses import dataclass\n\n@dataclass\nclass Point:\n    x: int\n    y: int = 0","explain":"@dataclass auto-generates __init__, __repr__, and __eq__ from typed class fields, cutting boilerplate."},{"title":"Context manager","code":"from contextlib import contextmanager\n\n@contextmanager\ndef opened(path):\n    f = open(path)\n    try:\n        yield f\n    finally:\n        f.close()","explain":"A context manager with @contextmanager runs setup before yield and guaranteed cleanup after, used with the with statement."},{"title":"Type hints","code":"def greet(names: list[str]) -> dict[str, int]:\n    return {name: len(name) for name in names}","explain":"Type hints annotate parameter and return types so tools and readers know what data a function expects and produces."},{"title":"Abstract base class","code":"from abc import ABC, abstractmethod\n\nclass Shape(ABC):\n    @abstractmethod\n    def area(self) -> float:\n        ...","explain":"An abstract base class defines methods subclasses must implement and cannot itself be instantiated."},{"title":"Custom iterator","code":"class Counter:\n    def __init__(self, limit):\n        self.n = 0\n        self.limit = limit\n\n    def __iter__(self):\n        return self\n\n    def __next__(self):\n        if self.n >= self.limit:\n            raise StopIteration\n        self.n += 1\n        return self.n","explain":"Implementing __iter__ and __next__ makes a class iterable so it works directly in for loops."},{"title":"Structural pattern match","code":"def describe(point):\n    match point:\n        case (0, 0):\n            return \"origin\"\n        case (x, 0):\n            return f\"x-axis at {x}\"\n        case _:\n            return \"elsewhere\"","explain":"The match statement destructures and matches values against patterns, like a powerful switch with unpacking."},{"title":"Async coroutine","code":"import asyncio\n\nasync def fetch(n):\n    await asyncio.sleep(n)\n    return n\n\nasync def main():\n    return await asyncio.gather(fetch(1), fetch(2))","explain":"async/await defines coroutines that pause on await, letting many tasks run concurrently without threads."},{"title":"Generic TypeVar","code":"from typing import TypeVar\n\nT = TypeVar(\"T\")\n\ndef first(items: list[T]) -> T:\n    return items[0]","explain":"A TypeVar lets you write generic functions whose return type matches the element type of the input."}]},"sql":{"beginner":[{"title":"SELECT a value","code":"SELECT 1;","explain":"SELECT outputs a value or expression, and every SQL statement ends with a semicolon."},{"title":"SELECT all columns","code":"SELECT * FROM employees;","explain":"FROM names the table, and the star wildcard returns every column for all rows."},{"title":"Select specific columns","code":"SELECT first_name, last_name FROM employees;","explain":"List the exact columns you want, separated by commas, to return only those."},{"title":"DISTINCT values","code":"SELECT DISTINCT department FROM employees;","explain":"DISTINCT removes duplicate rows so each unique value appears only once."},{"title":"Column alias with AS","code":"SELECT first_name AS name FROM employees;","explain":"AS renames a column in the result so the output header is friendlier to read."},{"title":"WHERE filter","code":"SELECT * FROM employees\nWHERE department = 'Sales';","explain":"WHERE keeps only the rows where the given condition is true."},{"title":"Comparison operators","code":"SELECT * FROM employees\nWHERE salary >= 50000;","explain":"Operators like =, <>, <, >, <=, and >= compare a column against a value."},{"title":"AND and OR","code":"SELECT * FROM employees\nWHERE department = 'Sales' AND salary > 40000;","explain":"AND requires all conditions to be true, while OR requires at least one."},{"title":"BETWEEN range","code":"SELECT * FROM employees\nWHERE salary BETWEEN 30000 AND 60000;","explain":"BETWEEN tests whether a value falls within an inclusive range of two bounds."},{"title":"IN list","code":"SELECT * FROM employees\nWHERE department IN ('Sales', 'HR', 'IT');","explain":"IN checks whether a value matches any item in a given list of options."},{"title":"LIKE pattern match","code":"SELECT * FROM employees\nWHERE last_name LIKE 'S%';","explain":"LIKE matches text patterns where percent means any characters and underscore one."},{"title":"IS NULL check","code":"SELECT * FROM employees\nWHERE manager_id IS NULL;","explain":"NULL means missing data, so test it with IS NULL or IS NOT NULL, never equals."},{"title":"ORDER BY sort","code":"SELECT * FROM employees\nORDER BY salary DESC;","explain":"ORDER BY sorts the result rows, ascending by default or descending with DESC."},{"title":"LIMIT rows","code":"SELECT * FROM employees\nORDER BY salary DESC\nLIMIT 5;","explain":"LIMIT caps how many rows are returned, useful for top-N style queries."},{"title":"COUNT rows","code":"SELECT COUNT(*) FROM employees;","explain":"COUNT returns the number of rows, and the star counts every row including nulls."},{"title":"Aggregate functions","code":"SELECT AVG(salary), MAX(salary), MIN(salary)\nFROM employees;","explain":"Functions like SUM, AVG, MAX, and MIN compute a single value over many rows."},{"title":"GROUP BY","code":"SELECT department, COUNT(*)\nFROM employees\nGROUP BY department;","explain":"GROUP BY collapses rows into groups so aggregates are computed per group."},{"title":"HAVING filter groups","code":"SELECT department, COUNT(*)\nFROM employees\nGROUP BY department\nHAVING COUNT(*) > 5;","explain":"HAVING filters groups after aggregation, the way WHERE filters individual rows."},{"title":"INNER JOIN","code":"SELECT e.first_name, d.name\nFROM employees e\nJOIN departments d ON e.department_id = d.id;","explain":"JOIN combines rows from two tables where the ON matching condition holds true."},{"title":"INSERT a row","code":"INSERT INTO employees (first_name, salary)\nVALUES ('Ada', 55000);","explain":"INSERT adds a new row, listing the target columns and their matching values."}],"intermediate":[{"title":"Left join","code":"SELECT c.name, o.amount\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id;","explain":"Keeps every row from the left table, filling unmatched right-side columns with NULL."},{"title":"Multi-table join","code":"SELECT c.name, o.amount, o.status\nFROM customers c\nJOIN orders o ON o.customer_id = c.id\nWHERE o.amount > 200;","explain":"Chains joins and a filter to pull related data across several tables at once."},{"title":"Self join","code":"SELECT e.name AS employee, m.name AS manager\nFROM employees e\nJOIN employees m ON e.manager_id = m.id;","explain":"Joins a table to itself, using aliases to relate rows like employees to their managers."},{"title":"Having on aggregate","code":"SELECT department_id, AVG(salary) AS avg_salary\nFROM employees\nGROUP BY department_id\nHAVING AVG(salary) > 80000;","explain":"Filters grouped results by an aggregate condition, after GROUP BY has run."},{"title":"Conditional aggregate","code":"SELECT COUNT(*) AS total,\n    SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS done\nFROM orders;","explain":"Counts only rows meeting a condition by summing a CASE expression inside an aggregate."},{"title":"CASE expression","code":"SELECT name,\n    CASE WHEN salary >= 100000 THEN 'high' ELSE 'standard' END AS tier\nFROM employees;","explain":"Returns different values per row based on conditions, like an inline if/else."},{"title":"COALESCE for NULLs","code":"SELECT name, COALESCE(email, 'no email') AS contact\nFROM employees;","explain":"Returns the first non-NULL argument, a clean way to supply fallback values."},{"title":"Scalar subquery","code":"SELECT name, salary\nFROM employees\nWHERE salary > (SELECT AVG(salary) FROM employees);","explain":"Embeds a query that returns one value, used here to compare each row to an average."},{"title":"IN subquery","code":"SELECT name\nFROM customers\nWHERE id IN (SELECT customer_id FROM orders WHERE status = 'completed');","explain":"Keeps rows whose value appears in the result set produced by an inner query."},{"title":"EXISTS subquery","code":"SELECT d.name\nFROM departments d\nWHERE EXISTS (SELECT 1 FROM employees e WHERE e.department_id = d.id);","explain":"Tests whether a correlated inner query returns any row, efficient for existence checks."},{"title":"Common table expression","code":"WITH active AS (\n    SELECT * FROM employees WHERE status = 'active'\n)\nSELECT name, salary FROM active ORDER BY salary DESC;","explain":"Names a temporary result set with WITH so the main query stays readable and reusable."},{"title":"ROW_NUMBER window","code":"SELECT name, salary,\n    ROW_NUMBER() OVER (ORDER BY salary DESC) AS rank\nFROM employees;","explain":"Assigns a unique sequential number to each row in a defined order, without grouping."},{"title":"RANK with partition","code":"SELECT name, department_id,\n    RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) AS r\nFROM employees;","explain":"Ranks rows within each partition separately, giving ties the same rank."},{"title":"Running total","code":"SELECT order_date, amount,\n    SUM(amount) OVER (ORDER BY order_date) AS running_total\nFROM orders;","explain":"Accumulates a sum across ordered rows, computing a cumulative total per row."},{"title":"LAG previous row","code":"SELECT order_date, amount,\n    LAG(amount) OVER (ORDER BY order_date) AS prev_amount\nFROM orders;","explain":"Reads a value from the previous row in order, ideal for period-over-period comparisons."},{"title":"UNION ALL","code":"SELECT name FROM customers\nUNION ALL\nSELECT name FROM employees;","explain":"Stacks the rows of two result sets into one, keeping duplicates for speed."},{"title":"INSERT from SELECT","code":"INSERT INTO departments (id, name, location)\nSELECT 4, 'Legal', 'DC'\nWHERE NOT EXISTS (SELECT 1 FROM departments WHERE id = 4);","explain":"Inserts rows produced by a query, here only when a matching row does not already exist."},{"title":"Correlated UPDATE","code":"UPDATE employees\nSET status = 'review'\nWHERE salary > (SELECT AVG(salary) FROM employees);","explain":"Modifies rows selected by a subquery condition, updating only those that qualify."}],"advanced":[{"title":"NTILE buckets","code":"SELECT name, salary,\n    NTILE(4) OVER (ORDER BY salary DESC) AS quartile\nFROM employees;","explain":"NTILE splits ordered rows into the given number of evenly sized ranked buckets."},{"title":"FIRST_VALUE per group","code":"SELECT name, dept,\n    FIRST_VALUE(name) OVER (\n        PARTITION BY dept ORDER BY salary DESC\n    ) AS top_earner\nFROM employees;","explain":"FIRST_VALUE returns the first row's value within each ordered window partition."},{"title":"Moving average frame","code":"SELECT day, amount,\n    AVG(amount) OVER (\n        ORDER BY day ROWS BETWEEN 2 PRECEDING AND CURRENT ROW\n    ) AS moving_avg\nFROM sales;","explain":"A ROWS frame limits the window to nearby rows, here averaging the last three days."},{"title":"Named WINDOW clause","code":"SELECT name, dept,\n    RANK() OVER w AS rnk,\n    SUM(salary) OVER w AS dept_total\nFROM employees\nWINDOW w AS (PARTITION BY dept ORDER BY salary DESC);","explain":"WINDOW defines a frame once by name so multiple functions can reuse it cleanly."},{"title":"FILTER aggregate","code":"SELECT dept,\n    COUNT(*) FILTER (WHERE salary > 100000) AS high_earners\nFROM employees\nGROUP BY dept;","explain":"FILTER applies a condition to a single aggregate without affecting the rest of the query."},{"title":"GROUPING SETS","code":"SELECT dept, role, SUM(salary)\nFROM employees\nGROUP BY GROUPING SETS ((dept), (role), ());","explain":"GROUPING SETS computes multiple groupings in one query, including a grand total."},{"title":"Multi-CTE pipeline","code":"WITH dept_avg AS (\n    SELECT dept, AVG(salary) AS avg_sal FROM employees GROUP BY dept\n)\nSELECT e.name, e.salary\nFROM employees e\nJOIN dept_avg d ON e.dept = d.dept AND e.salary > d.avg_sal;","explain":"A CTE precomputes per-group averages so the main query can join and compare against them."},{"title":"Lateral join","code":"SELECT c.name, o.total\nFROM customers c\nCROSS JOIN LATERAL (\n    SELECT total FROM orders o\n    WHERE o.cust_id = c.id ORDER BY total DESC LIMIT 1\n) o;","explain":"LATERAL lets a subquery reference columns from earlier tables in the same FROM clause."},{"title":"Recursive CTE","code":"WITH RECURSIVE nums AS (\n    SELECT 1 AS n\n    UNION ALL\n    SELECT n + 1 FROM nums WHERE n < 10\n)\nSELECT n FROM nums;","explain":"A recursive CTE repeatedly references itself to walk hierarchies or generate sequences."},{"title":"DISTINCT ON","code":"SELECT DISTINCT ON (cust_id) cust_id, total\nFROM orders\nORDER BY cust_id, total DESC;","explain":"DISTINCT ON keeps the first row per group given the ORDER BY, ideal for latest-per-key queries."},{"title":"UPSERT on conflict","code":"INSERT INTO counters (id, hits) VALUES (1, 1)\nON CONFLICT (id) DO UPDATE\nSET hits = counters.hits + 1;","explain":"ON CONFLICT inserts a row or updates the existing one when a unique key already exists."},{"title":"JSONB extraction","code":"SELECT data->>'name' AS name, data->'tags'->>0 AS first_tag\nFROM events\nWHERE data->>'type' = 'click';","explain":"The ->> and -> operators extract text and nested values from JSONB columns."},{"title":"Pivot with CASE sums","code":"SELECT dept,\n    SUM(CASE WHEN role = 'lead' THEN 1 ELSE 0 END) AS leads,\n    SUM(CASE WHEN role = 'ic' THEN 1 ELSE 0 END) AS ics\nFROM employees\nGROUP BY dept;","explain":"Combining CASE with SUM pivots row values into separate aggregated columns."},{"title":"EXPLAIN ANALYZE","code":"EXPLAIN ANALYZE\nSELECT * FROM orders WHERE total > 100;","explain":"EXPLAIN ANALYZE runs the query and reports the real execution plan and timings for tuning."}]},"bash":{"beginner":[{"title":"Echo output","code":"echo \"Hello, World!\"","explain":"The echo command prints text to the screen, the classic first program."},{"title":"Comments","code":"# this line is ignored by the shell\necho \"Hi\"   # notes can trail a command too","explain":"Anything after a # is a comment that the shell skips when running the script."},{"title":"Variables","code":"name=\"Ada\"\necho \"Hi $name\"","explain":"Assign a value with name=value (no spaces) and read it back with a $ prefix."},{"title":"Quoting basics","code":"price=5\necho \"Cost is \\$$price today\"","explain":"Double quotes keep text together while expanding variables, and a backslash escapes a literal dollar sign."},{"title":"Reading input","code":"read -r name\necho \"Hello, $name\"","explain":"The read command pauses and stores a line the user types into a variable."},{"title":"Command substitution","code":"year=$(date +%Y)\necho \"Year: $year\"","explain":"$(...) runs a command and substitutes its output directly into your text."},{"title":"Arithmetic","code":"a=5\nb=3\necho $(( a + b ))","explain":"The $(( ... )) syntax evaluates integer math like addition and multiplication."},{"title":"Positional params","code":"set -- one two three\necho \"First: $1\"","explain":"Scripts receive arguments as $1, $2, $3, letting a script act on different inputs."},{"title":"Default value","code":"name=${1:-stranger}\necho \"Hi $name\"","explain":"${var:-default} supplies a fallback value when the variable is empty or unset."},{"title":"Exit status","code":"true && echo yes\nfalse || echo no","explain":"Every command returns success or failure, which && and || use to chain decisions."},{"title":"Test strings","code":"word=\"abc\"\n[ \"$word\" = \"abc\" ] && echo equal","explain":"The [ ... ] test command compares values and succeeds or fails, here checking string equality."},{"title":"Test files","code":"[ -f /etc/passwd ] && echo \"file exists\"\n[ -d /tmp ] && echo \"dir exists\"","explain":"File-test flags like -f and -d check whether a path is a regular file or a directory."},{"title":"If statement","code":"n=7\nif [ \"$n\" -gt 5 ]; then\n    echo big\nelse\n    echo small\nfi","explain":"An if/else block runs different code depending on whether a test succeeds."},{"title":"Case statement","code":"x=b\ncase \"$x\" in\n    a) echo A;;\n    b) echo B;;\n    *) echo other;;\nesac","explain":"case matches a value against patterns, a clean alternative to many if branches."},{"title":"For loop","code":"for fruit in apple pear plum; do\n    echo \"$fruit\"\ndone","explain":"A for loop repeats its body once for each item in a list of words."},{"title":"Loop over files","code":"for f in *.txt; do\n    echo \"Found: $f\"\ndone","explain":"A glob like *.txt expands to matching filenames so a loop can process each one."},{"title":"While loop","code":"i=1\nwhile [ \"$i\" -le 3 ]; do\n    echo \"$i\"\n    i=$(( i + 1 ))\ndone","explain":"A while loop keeps running its body as long as the test condition stays true."},{"title":"Functions","code":"greet() {\n    echo \"Hello, $1\"\n}\ngreet World","explain":"Functions package reusable code that you call by name, with arguments as $1, $2."},{"title":"Redirection","code":"echo \"data\" > out.txt\ncat out.txt","explain":"The > operator sends a command's output into a file instead of the screen."},{"title":"Pipes","code":"printf \"b\\na\\nc\\n\" | sort | head -n 1","explain":"A pipe feeds one command's output as the input of the next, chaining tools together."}],"intermediate":[{"title":"Append and view","code":"echo one > log.txt\necho two >> log.txt\ncat log.txt","explain":"The >> operator appends to a file instead of overwriting it like a single >."},{"title":"Redirect stderr","code":"ls /nope 2>/dev/null || echo \"handled\"","explain":"The 2> operator redirects error output separately, here discarding it before handling failure."},{"title":"Brace expansion","code":"echo file_{1..3}.txt\nmkdir -p proj/{src,test,docs}","explain":"Brace expansion generates sequences and combinations of strings before any command runs."},{"title":"Arithmetic reassign","code":"count=5\ncount=$((count + 3))\necho \"Total is $count\"","explain":"Performs integer math inside $((...)) without external tools like expr."},{"title":"Numeric test in if","code":"n=10\nif [ \"$n\" -gt 5 ]; then\n    echo \"big\"\nfi","explain":"Compares integers with -gt, -lt, and -eq inside [ ] to branch on numbers."},{"title":"Combined file tests","code":"if [ -f \"$file\" ] && [ -r \"$file\" ]; then\n    echo \"readable file\"\nfi","explain":"Checks several file properties at once, like -f (is a file) and -r (readable), before acting."},{"title":"Until loop","code":"i=1\nuntil [ \"$i\" -gt 3 ]; do\n    echo \"$i\"\n    i=$((i + 1))\ndone","explain":"An until loop runs its body until the test becomes true, the mirror image of while."},{"title":"String length and basename","code":"path=/usr/local/bin\necho \"${#path} ${path##*/}\"","explain":"Gets a string's length with ${#var} and trims the longest prefix with ${var##pattern}."},{"title":"Suffix removal","code":"f=\"archive.tar.gz\"\necho \"${f%.gz}\"","explain":"Removes a matching suffix with ${var%pattern}, handy for changing file extensions."},{"title":"Loop over arguments","code":"for arg in \"$@\"; do\n    echo \"got: $arg\"\ndone","explain":"Iterates over each script argument safely by quoting \"$@\"."},{"title":"Read file line by line","code":"while IFS= read -r line; do\n    echo \">> $line\"\ndone < input.txt","explain":"Reads a file one line at a time without mangling whitespace or backslashes."},{"title":"Split fields with IFS","code":"echo \"a:b:c\" | { IFS=: read -r x y z; echo \"$y\"; }","explain":"Sets IFS so read splits a line into separate variables on a chosen delimiter."},{"title":"Function return status","code":"is_empty() {\n    [ -z \"$1\" ]\n}\nis_empty \"\" && echo \"empty\"","explain":"A function returns its last command's exit status, so it works directly in if and &&."},{"title":"Chaining on success","code":"mkdir -p build && cd build || exit 1","explain":"Runs the next command only on success (&&) or failure (||) of the previous one."},{"title":"printf formatting","code":"printf '%-10s %5d\\n' \"items\" 42","explain":"Produces precise, aligned output with format specifiers instead of plain echo."},{"title":"Capture with printf -v","code":"printf -v stamp '%(%Y-%m-%d)T' -1\necho \"today is $stamp\"","explain":"The -v flag stores formatted output straight into a variable instead of printing it."},{"title":"Here-document","code":"cat <<EOF > config.txt\nhost=localhost\nport=8080\nEOF","explain":"A here-document feeds a multi-line block of text straight into a command or file."}],"advanced":[{"title":"Strict mode header","code":"#!/usr/bin/env bash\nset -euo pipefail\nIFS=$'\\n\\t'","explain":"Starts a robust script by aborting on errors, unset variables, and failed pipes while taming word-splitting."},{"title":"Default and assign in place","code":"name=${1:-world}\necho \"Hello, ${name}\"\n: \"${CONFIG:=/etc/app.conf}\"\necho \"Using ${CONFIG}\"","explain":"Supplies a fallback with :- and assigns a default in place with := when a variable is empty or unset."},{"title":"Require a parameter","code":"name=${1:?usage: need a name}\necho \"Hello, $name\"","explain":"The ${var:?message} form aborts with an error message when a required variable is missing."},{"title":"String slicing","code":"s=HelloWorld\necho \"${s:0:5}\"\necho \"${s:5}\"","explain":"Extracts a substring by offset and length using ${var:start:len} entirely in the shell."},{"title":"Search and replace expansion","code":"csv=a,b,c,d\necho \"${csv//,/ }\"\nfile=report.txt\necho \"${file%.txt}.bak\"","explain":"Replaces every match with // and rewrites a file extension purely with parameter expansion."},{"title":"C-style arithmetic","code":"count=0\n(( count += 5 ))\n(( count > 3 )) && echo big\necho $(( count % 2 == 0 ? 0 : 1 ))","explain":"Performs math, comparisons, and ternary logic inside (( )) and $(( )) without spawning expr."},{"title":"Arithmetic for loop","code":"for (( i=0; i<3; i++ )); do\n    echo \"row $i\"\ndone","explain":"The C-style for (( ; ; )) loop counts with an index, ideal for fixed-iteration work."},{"title":"Indexed arrays","code":"hosts=(web01 web02 db01)\nhosts+=(cache01)\necho \"count=${#hosts[@]}\"\necho \"all: ${hosts[@]}\"","explain":"Builds, appends to, and inspects a real list, expanding every element safely with quoted [@]."},{"title":"Associative arrays","code":"declare -A port\nport[http]=80 port[https]=443\nfor k in \"${!port[@]}\"; do\n    echo \"$k -> ${port[$k]}\"\ndone","explain":"Creates a key/value map with declare -A and iterates its keys with the ${!array[@]} expansion."},{"title":"Robust while-read loop","code":"while IFS=, read -r name age; do\n    echo \"$name is $age\"\ndone < people.csv","explain":"Reads a file with a custom field separator, using -r so backslashes stay literal."},{"title":"Case dispatcher","code":"case $1 in\n    start|up) echo starting ;;\n    stop)     echo stopping ;;\n    *)        echo \"usage: $0 {start|stop}\" ;;\nesac","explain":"Branches on glob patterns and alternation, the idiomatic way to build a command dispatcher."},{"title":"getopts flag parsing","code":"while getopts \":vf:\" opt; do\n    case $opt in\n        v) verbose=1 ;;\n        f) file=$OPTARG ;;\n    esac\ndone","explain":"Parses single-letter options and their arguments the standard way, with OPTARG holding each value."},{"title":"Functions and local scope","code":"log() {\n    local level=$1; shift\n    printf '[%s] %s\\n' \"$level\" \"$*\"\n}\nlog INFO \"server ready\"","explain":"Defines a reusable function whose local variables stay private while forwarding the rest via $*."},{"title":"trap cleanup on EXIT","code":"tmp=$(mktemp)\ntrap 'rm -f \"$tmp\"' EXIT\necho data > \"$tmp\"\nsort \"$tmp\"","explain":"Registers a cleanup handler that runs no matter how the script exits, guaranteeing temp files vanish."},{"title":"Regex match capture","code":"if [[ $line =~ ^([0-9]+)\\.([0-9]+) ]]; then\n    major=${BASH_REMATCH[1]}\n    minor=${BASH_REMATCH[2]}\nfi","explain":"Tests a string against a regex inside [[ =~ ]] and pulls capture groups from the BASH_REMATCH array."},{"title":"Process substitution","code":"diff <(sort a.txt) <(sort b.txt)\nwhile read -r f; do\n    echo \"$f\"\ndone < <(find . -name '*.log')","explain":"Feeds a command's output where a filename is expected, avoiding temp files and subshell variable loss."},{"title":"Pipefail error handling","code":"if ! curl -fsS \"$url\" | gunzip > out; then\n    echo \"fetch failed\" >&2\n    exit 1\nfi","explain":"Detects failure anywhere in a pipeline thanks to pipefail and reports it to stderr before exiting."}]},"typescript":{"beginner":[{"title":"Type annotations","code":"let username: string = \"Ada\";\nlet age: number = 30;\nlet active: boolean = true;","explain":"Annotations tell TypeScript the exact type each variable is allowed to hold."},{"title":"Type inference","code":"let score = 100;\nlet city = \"Tokyo\";\nlet ready = false;","explain":"TypeScript infers the type from the initial value, so you can often omit annotations."},{"title":"const and let","code":"const pi = 3.14;\nlet count = 0;\ncount = count + 1;","explain":"Use const for values that never change and let for variables you reassign."},{"title":"null and undefined","code":"let middleName: string | null = null;\nlet result: number | undefined = undefined;","explain":"null and undefined are their own types and often appear in a union with a real type."},{"title":"Template literals","code":"const name = \"Sam\";\nconst greeting = `Hello, ${name}!`;","explain":"Backtick strings let you embed expressions directly using the ${} syntax."},{"title":"Arrays","code":"const scores: number[] = [90, 85, 72];\nconst names: string[] = [\"a\", \"b\"];","explain":"The type[] syntax declares an array where every element shares the same type."},{"title":"Tuples","code":"const point: [number, number] = [10, 20];\nconst pair: [string, number] = [\"id\", 1];","explain":"A tuple is a fixed-length array where each position has its own declared type."},{"title":"Object types","code":"const user: { name: string; age: number } = {\n    name: \"Eve\",\n    age: 28,\n};","explain":"You can describe an object's shape by listing each property name and its type."},{"title":"Union types","code":"let id: string | number = 42;\nid = \"abc123\";","explain":"A union type lets a value hold any one of several listed types."},{"title":"Literal types","code":"let dir: \"up\" | \"down\" = \"up\";\ndir = \"down\";","explain":"Literal types restrict a value to a specific set of exact allowed values."},{"title":"any and unknown","code":"let raw: unknown = fetchData();\nlet loose: any = 5;","explain":"any disables type checking while unknown is safer and requires a check first."},{"title":"Functions","code":"function add(a: number, b: number): number {\n    return a + b;\n}","explain":"Annotate each parameter and the return type so calls are fully type-checked."},{"title":"Arrow functions","code":"const double = (n: number): number => n * 2;\nconst square = (n: number) => n * n;","explain":"Arrow functions are a compact syntax for writing function expressions."},{"title":"Optional parameters","code":"function greet(name: string, title?: string): string {\n    return title ? `${title} ${name}` : name;\n}","explain":"A parameter marked with ? may be omitted and is then typed as possibly undefined."},{"title":"Default parameters","code":"function power(base: number, exp: number = 2): number {\n    return base ** exp;\n}","explain":"Default values are used automatically when the caller leaves an argument out."},{"title":"void return type","code":"function logLine(msg: string): void {\n    console.log(msg);\n}","explain":"A void return type marks a function that runs for its effect and returns no value."},{"title":"if / else","code":"const temp = 30;\nif (temp > 25) {\n    console.log(\"hot\");\n} else {\n    console.log(\"cool\");\n}","explain":"if/else runs different blocks of code depending on whether a condition is true."},{"title":"Comparison operators","code":"const a = 5;\nconst b = 8;\nconst result = a === b || a < b;","explain":"Use === for strict equality and <, > to compare values into a boolean result."},{"title":"for...of loop","code":"const nums = [1, 2, 3];\nfor (const n of nums) {\n    console.log(n);\n}","explain":"for...of iterates directly over each element's value in an array or iterable."},{"title":"Array map","code":"const nums = [1, 2, 3];\nconst doubled = nums.map((n) => n * 2);","explain":"map builds a new array by transforming every element with the given function."},{"title":"Array filter","code":"const nums = [1, 2, 3, 4];\nconst evens = nums.filter((n) => n % 2 === 0);","explain":"filter returns a new array keeping only elements that pass the test function."},{"title":"Type alias","code":"type User = { name: string; age: number };\nconst u: User = { name: \"Mia\", age: 22 };","explain":"A type alias gives a reusable name to an object shape or any other type."}],"intermediate":[{"title":"Interface for objects","code":"interface User {\n    id: number;\n    name: string;\n    email?: string;\n}","explain":"An interface names the shape of an object so it can be reused and checked everywhere."},{"title":"Optional & default params","code":"function log(msg: string, level = \"info\", tag?: string) {\n    return tag ? `[${tag}] ${level}: ${msg}` : `${level}: ${msg}`;\n}","explain":"A default value supplies a fallback, and a ? marks a parameter the caller may omit."},{"title":"Type alias & union","code":"type Status = \"active\" | \"paused\" | \"closed\";\ntype Id = string | number;","explain":"A type alias names a type, and a union allows a value to be one of several types."},{"title":"Record object type","code":"const tags: string[] = [\"new\", \"sale\"];\nconst scores: Record<string, number> = { math: 90, art: 85 };","explain":"Record types an object whose keys and values all follow one declared type pattern."},{"title":"Readonly & const assert","code":"const point = { x: 1, y: 2 } as const;\ninterface Config { readonly url: string; }","explain":"readonly and 'as const' freeze values so TypeScript flags any attempt to mutate them."},{"title":"Typed array methods","code":"const nums = [1, 2, 3, 4];\nconst doubled = nums.map((n) => n * 2);\nconst evens = nums.filter((n) => n % 2 === 0);\nconst sum = nums.reduce((a, n) => a + n, 0);","explain":"map, filter, and reduce infer element types so callbacks stay fully type-checked."},{"title":"Optional chaining","code":"const city = user?.address?.city ?? \"unknown\";","explain":"?. safely reads nested properties and ?? gives a fallback when the result is nullish."},{"title":"Type narrowing","code":"function len(x: string | string[]): number {\n    if (typeof x === \"string\") return x.length;\n    return x.length;\n}","explain":"A typeof check narrows a union so each branch sees the specific type it handles."},{"title":"keyof operator","code":"interface User { id: number; name: string; }\ntype UserKey = keyof User;","explain":"keyof produces a union of an object type's property names as string literal types."},{"title":"Enums","code":"enum Direction {\n    Up,\n    Down,\n    Left,\n    Right,\n}","explain":"An enum defines a set of named constants you can reference instead of magic values."},{"title":"Function overloads","code":"function parse(x: string): number;\nfunction parse(x: number): string;\nfunction parse(x: any): any { return x; }","explain":"Overload signatures let one function expose several precise input and output shapes."},{"title":"Generic function","code":"function first<T>(items: T[]): T | undefined {\n    return items[0];\n}","explain":"A generic parameter T lets one function work with any element type while staying safe."},{"title":"Generic interface","code":"interface Box<T> {\n    value: T;\n}\nconst b: Box<string> = { value: \"hi\" };","explain":"A generic interface parameterizes a shape so the same wrapper can hold any payload."},{"title":"Index signature","code":"interface Dictionary {\n    [key: string]: number;\n}","explain":"An index signature describes objects with arbitrary keys that all map to one value type."},{"title":"Utility types","code":"type Draft = Partial<User>;\ntype Public = Omit<User, \"email\">;\ntype Lookup = Pick<User, \"id\" | \"name\">;","explain":"Built-in helpers like Partial, Omit, and Pick transform existing types without rewriting."},{"title":"Typed async function","code":"async function fetchUser(id: number): Promise<User> {\n    const res = await fetch(`/users/${id}`);\n    return res.json() as Promise<User>;\n}","explain":"An async function always returns a Promise, and await unwraps it to the resolved value."},{"title":"Class with access mods","code":"class Account {\n    constructor(private balance: number) {}\n    deposit(amount: number): void {\n        this.balance += amount;\n    }\n}","explain":"Parameter properties with private declare and assign fields right in the constructor."},{"title":"Generic constraint","code":"function longest<T extends { length: number }>(a: T, b: T): T {\n    return a.length >= b.length ? a : b;\n}","explain":"extends constrains a generic so the body can safely use the required members."}],"advanced":[{"title":"satisfies operator","code":"const config = {\n    port: 8080,\n    host: \"localhost\",\n} satisfies Record<string, string | number>;","explain":"The satisfies operator checks a value against a type while keeping its precise literals."},{"title":"Const type parameters","code":"function tuple<const T extends unknown[]>(...args: T): T {\n    return args;\n}","explain":"A const type parameter preserves literal types so arguments infer as a tuple, not widened."},{"title":"Discriminated unions","code":"type Shape =\n    | { kind: \"circle\"; r: number }\n    | { kind: \"square\"; size: number };","explain":"A shared literal tag lets TypeScript narrow a union to one exact variant by that field."},{"title":"Exhaustive never check","code":"function assertNever(x: never): never {\n    throw new Error(\"Unexpected: \" + x);\n}","explain":"Passing a value to a never parameter forces a compile error if a union case is unhandled."},{"title":"Generic constraints","code":"function pluck<T, K extends keyof T>(obj: T, key: K): T[K] {\n    return obj[key];\n}","explain":"Constraining a key to keyof T makes indexed access fully type-safe and precisely typed."},{"title":"Conditional types","code":"type Flatten<T> = T extends Array<infer U> ? U : T;","explain":"A conditional type picks one of two result types based on whether T matches a pattern."},{"title":"infer keyword","code":"type ReturnOf<T> = T extends (...a: any[]) => infer R ? R : never;","explain":"The infer keyword captures a type from a matched position to reuse in the result branch."},{"title":"Mapped types","code":"type Optional<T> = {\n    [K in keyof T]?: T[K];\n};","explain":"A mapped type builds a new type by iterating each key of an existing one and transforming."},{"title":"Key remapping as","code":"type Getters<T> = {\n    [K in keyof T as `get${Capitalize<string & K>}`]: () => T[K];\n};","explain":"The as clause in a mapped type renames each produced key using template literal types."},{"title":"Template literal types","code":"type Route = `/${string}`;\ntype Method = `${\"GET\" | \"POST\"} ${Route}`;","explain":"Template literal types compose string types from unions and placeholders into patterns."},{"title":"Recursive types","code":"type Json =\n    | string | number | boolean | null\n    | Json[] | { [k: string]: Json };","explain":"A type that references itself models arbitrarily nested structures like JSON values."},{"title":"Variadic tuple types","code":"type Push<T extends unknown[], V> = [...T, V];","explain":"Spreading a tuple type inside another lets you build and extend fixed-shape tuples."},{"title":"Distributive conditionals","code":"type ToArray<T> = T extends any ? T[] : never;\ntype R = ToArray<string | number>;","explain":"A naked type parameter in a conditional distributes over each member of a union."},{"title":"Type predicate guards","code":"function isString(x: unknown): x is string {\n    return typeof x === \"string\";\n}","explain":"A return type of x is string narrows the value wherever the guard returns true."},{"title":"Assertion functions","code":"function assert(c: unknown): asserts c {\n    if (!c) throw new Error(\"Assertion failed\");\n}","explain":"An asserts signature narrows the input for all code after the call, throwing on failure."},{"title":"Branded types","code":"type UserId = string & { readonly __brand: \"UserId\" };\nconst id = \"u1\" as UserId;","explain":"Intersecting with a unique brand creates a nominal type plain strings cannot satisfy."}]},"javascript":{"beginner":[{"title":"console.log output","code":"console.log(\"Hello, world!\");","explain":"console.log prints a value to the console so you can see your program's output."},{"title":"Number variable (let)","code":"let age = 25;\nconsole.log(age);","explain":"let declares a variable whose value you can change later, here holding a number."},{"title":"String variable","code":"let name = \"Ada\";\nconsole.log(name);","explain":"A string stores text wrapped in quotation marks."},{"title":"Constants (const)","code":"const PI = 3.14159;\nconsole.log(PI);","explain":"const declares a value that must never be reassigned after it is set."},{"title":"Boolean values","code":"let isOnline = true;\nlet isHidden = false;","explain":"A boolean is a true or false value used to represent yes/no conditions."},{"title":"Arithmetic operators","code":"let total = 8 + 4 * 2 - 3;\nconsole.log(total);","explain":"JavaScript does math with +, -, *, and / following normal order of operations."},{"title":"String concatenation","code":"let greeting = \"Hi, \" + name + \"!\";\nconsole.log(greeting);","explain":"The + operator joins strings together into one longer string."},{"title":"Template literals","code":"let msg = `Hello, ${name}!`;\nconsole.log(msg);","explain":"Backtick strings let you embed variables directly using ${} placeholders."},{"title":"Comparison operators","code":"let isAdult = age >= 18;\nconsole.log(isAdult);","explain":"Comparison operators like >= produce a boolean by comparing two values."},{"title":"Strict equality","code":"console.log(5 === 5);\nconsole.log(5 === \"5\");","explain":"=== checks if two values are equal in both value and type, without conversion."},{"title":"if / else","code":"if (age >= 18) {\n    console.log(\"Adult\");\n} else {\n    console.log(\"Minor\");\n}","explain":"An if/else statement runs different code depending on whether a condition is true."},{"title":"Logical operators","code":"let canEnter = age >= 18 && isOnline;\nconsole.log(canEnter);","explain":"&& means and, || means or, and ! flips a boolean to combine conditions."},{"title":"Arrays","code":"let fruits = [\"apple\", \"banana\", \"cherry\"];\nconsole.log(fruits[0]);","explain":"An array stores an ordered list of values accessed by their index starting at 0."},{"title":"Array push","code":"let nums = [1, 2, 3];\nnums.push(4);\nconsole.log(nums);","explain":"push adds a new element to the end of an array."},{"title":"Array length","code":"let colors = [\"red\", \"green\", \"blue\"];\nconsole.log(colors.length);","explain":"The length property tells you how many elements an array contains."},{"title":"Objects","code":"let user = { name: \"Ada\", age: 36 };\nconsole.log(user.name);","explain":"An object groups related data as key-value pairs accessed with dot notation."},{"title":"for loop","code":"for (let i = 0; i < 3; i++) {\n    console.log(i);\n}","explain":"A for loop repeats code a set number of times using a counter variable."},{"title":"for...of loop","code":"for (let fruit of fruits) {\n    console.log(fruit);\n}","explain":"A for...of loop walks through each element of an array one at a time."},{"title":"Function declaration","code":"function add(a, b) {\n    return a + b;\n}\nconsole.log(add(2, 3));","explain":"A function packages reusable code that takes inputs and returns a result."},{"title":"Arrow functions","code":"const square = (n) => n * n;\nconsole.log(square(5));","explain":"Arrow functions are a compact way to write functions using the => syntax."}],"intermediate":[{"title":"Default parameters","code":"function greet(name = \"friend\") {\n    return `Hi, ${name}`;\n}","explain":"Default parameters supply a fallback value when an argument is missing or undefined."},{"title":"Destructuring objects","code":"const user = { id: 1, name: \"Sam\", role: \"admin\" };\nconst { name, role } = user;","explain":"Object destructuring pulls named properties out of an object into standalone variables."},{"title":"Destructuring arrays","code":"const coords = [10, 20, 30];\nconst [x, y] = coords;","explain":"Array destructuring assigns elements to variables by their position in the array."},{"title":"Spread operator","code":"const base = [1, 2, 3];\nconst more = [...base, 4, 5];\nconst clone = { ...{ a: 1 }, b: 2 };","explain":"The spread operator expands the contents of an array or object into a new one."},{"title":"Rest parameters","code":"function sum(...nums) {\n    return nums.reduce((total, n) => total + n, 0);\n}","explain":"Rest parameters gather any number of arguments into a single array."},{"title":"Object shorthand","code":"const id = 1;\nconst label = \"home\";\nconst node = { id, label, render() { return label; } };","explain":"Shorthand syntax lets you use variable names as keys and define methods concisely."},{"title":"Unique values with Set","code":"const nums = [1, 1, 2, 3, 3];\nconst unique = [...new Set(nums)];","explain":"A Set stores only distinct values, so spreading it back gives a deduplicated array."},{"title":"Iterating object entries","code":"const scores = { a: 1, b: 2 };\nfor (const [key, value] of Object.entries(scores)) {\n    console.log(key, value);\n}","explain":"Object.entries turns an object into key-value pairs you can loop over directly."},{"title":"Array map","code":"const nums = [1, 2, 3];\nconst doubled = nums.map((n) => n * 2);","explain":"map transforms every element of an array and returns a new array of the results."},{"title":"Array filter","code":"const nums = [1, 2, 3, 4, 5, 6];\nconst evens = nums.filter((n) => n % 2 === 0);","explain":"filter keeps only the elements for which the callback returns true."},{"title":"Array reduce","code":"const nums = [1, 2, 3, 4];\nconst total = nums.reduce((acc, n) => acc + n, 0);","explain":"reduce folds an array down to a single accumulated value."},{"title":"Find and some/every","code":"const users = [{ age: 17 }, { age: 22 }];\nconst adult = users.find((u) => u.age >= 18);\nconst hasAdult = users.some((u) => u.age >= 18);\nconst allAdult = users.every((u) => u.age >= 18);","explain":"find returns the first match, some checks if any element passes, and every checks if all pass."},{"title":"Optional chaining","code":"const user = { profile: { email: \"a@b.com\" } };\nconst email = user?.profile?.email;","explain":"Optional chaining safely reads nested properties, returning undefined if any link is missing."},{"title":"Nullish coalescing","code":"const input = 0;\nconst count = input ?? 10;\nconst name = null ?? \"guest\";","explain":"The ?? operator falls back only when the left side is null or undefined, not falsy."},{"title":"Ternary and short-circuit","code":"const status = isActive ? \"on\" : \"off\";\nconst value = cached || fetchValue();","explain":"The ternary picks between two values, and || returns the first truthy operand."},{"title":"Promises and then","code":"fetch(\"/api/data\")\n    .then((res) => res.json())\n    .then((data) => console.log(data));","explain":"Promises represent future values and chain steps with then once the result arrives."},{"title":"Async / await","code":"async function load() {\n    const res = await fetch(\"/api/data\");\n    return await res.json();\n}","explain":"async/await lets you write asynchronous code that reads like sequential, synchronous steps."},{"title":"Try / catch errors","code":"try {\n    const data = await load();\n} catch (err) {\n    console.error(\"Failed:\", err.message);\n}","explain":"try/catch runs risky code and handles any error that gets thrown without crashing."}],"advanced":[{"title":"Logical assignment","code":"options.timeout ??= 3000;\nconfig.flags ||= [];\nuser.role &&= user.role.toUpperCase();","explain":"Assigns a value only when the target is nullish, falsy, or truthy respectively, combining a check and an assignment."},{"title":"Array destructure swap","code":"let [a, b] = [1, 2];\n[a, b] = [b, a];\nconst [first, ...rest] = [10, 20, 30];","explain":"Pulls values out of arrays by position, swaps variables without a temp, and collects the remainder with rest syntax."},{"title":"Flat array transforms","code":"const pairs = [[1, 2], [3, 4]];\nconst doubled = pairs.flatMap(([x, y]) => [x * y]);\nconst flat = pairs.flat();","explain":"Maps each element and flattens the result one level in a single pass, while flat collapses nested arrays."},{"title":"Object grouping","code":"const items = [{ type: \"a\" }, { type: \"b\" }, { type: \"a\" }];\nconst byType = items.reduce((acc, it) => {\n    (acc[it.type] ??= []).push(it);\n    return acc;\n}, {});","explain":"reduce groups items into an object keyed by a property, using ??= to start each group."},{"title":"Closures and counters","code":"function makeCounter() {\n    let count = 0;\n    return () => ++count;\n}\nconst next = makeCounter();","explain":"A returned function keeps access to its enclosing scope's variables, creating private persistent state."},{"title":"Run-once guard","code":"const once = (fn) => {\n    let done = false;\n    return (...a) => (done ? undefined : (done = true, fn(...a)));\n};","explain":"A closure flag ensures the wrapped function runs at most once no matter how often it is called."},{"title":"Currying","code":"const add = (a) => (b) => (c) => a + b + c;\nconst result = add(1)(2)(3);\nconst addFive = add(5);","explain":"Transforms a multi-argument function into a chain of single-argument functions that can be partially applied."},{"title":"Function composition","code":"const compose = (...fns) => (x) =>\n    fns.reduceRight((acc, fn) => fn(acc), x);\nconst shout = compose((s) => s + \"!\", (s) => s.toUpperCase());","explain":"Combines several functions into one that pipes its input through each function from right to left."},{"title":"Generators","code":"function* range(start, end) {\n    for (let i = start; i < end; i++) yield i;\n}\nconst nums = [...range(0, 5)];","explain":"A generator function pauses at each yield and resumes on demand, producing a lazy iterable sequence of values."},{"title":"Custom iterators","code":"const range = {\n    *[Symbol.iterator]() {\n        yield* [1, 2, 3];\n    },\n};\nfor (const n of range) console.log(n);","explain":"Implementing Symbol.iterator makes any object usable in for...of loops and spread syntax as an iterable."},{"title":"Promise.all + map","code":"const urls = [\"/a\", \"/b\"];\nconst data = await Promise.all(\n    urls.map((u) => fetch(u).then((r) => r.json()))\n);","explain":"Runs many async operations concurrently and waits for every promise to resolve into a single array of results."},{"title":"Async error handling","code":"const [res] = await Promise.allSettled([fetch(\"/x\")]);\nif (res.status === \"rejected\") console.error(res.reason);","explain":"allSettled waits for all promises regardless of outcome, reporting each as fulfilled or rejected without short-circuiting."},{"title":"Proxy traps","code":"const safe = new Proxy({}, {\n    get: (target, key) => key in target ? target[key] : 0,\n});\nsafe.missing;","explain":"A Proxy intercepts fundamental operations like property reads, letting you customize an object's behavior dynamically."},{"title":"WeakMap private state","code":"const store = new WeakMap();\nclass Box {\n    constructor(v) { store.set(this, v); }\n    get() { return store.get(this); }\n}","explain":"A WeakMap keys data by object identity and lets entries be garbage-collected, enabling truly private per-instance state."},{"title":"Tagged templates","code":"const html = (strings, ...values) =>\n    strings.reduce((acc, s, i) => acc + s + (values[i] ?? \"\"), \"\");\nconst out = html`<b>${\"hi\"}<\/b>`;","explain":"A tag function receives the literal string parts and interpolated values separately, letting you transform template output."},{"title":"Private class fields","code":"class Account {\n    #balance = 0;\n    deposit(n) { this.#balance += n; return this; }\n    static #count = 0;\n}","explain":"Fields prefixed with # are truly private to the class and cannot be accessed or seen from outside it."}]}}</script>
 <script>
 (function () {
   "use strict";
 
+  const CURRICULUM = JSON.parse(document.getElementById("curriculumData").textContent);
   const WORDS = ("the of to and a in is it you that he was for on are with as i his they be at one have this from or had by " +
     "word but what some we can out other were all there when up use your how said an each she which do their time if will way " +
     "function return const let var if else for while loop array object string number value index key map filter reduce class " +
     "import export default async await fetch then catch error data result type interface state props render event handler " +
     "build test deploy server client cache query model route param config token user login logout commit branch merge push").split(/\s+/);
 
-  // ---------- Curriculum: language -> level -> [{concept, code}] ----------
-  const CURRICULUM = {
-    javascript: {
-      beginner: [
-        { concept: "Variables & output", code:
-`let name = "Ada";
-console.log("hi " + name);` },
-        { concept: "If / else", code:
-`let age = 18;
-if (age >= 18) {
-  console.log("adult");
-} else {
-  console.log("minor");
-}` },
-        { concept: "For loop", code:
-`for (let i = 1; i <= 5; i++) {
-  console.log(i);
-}` },
-        { concept: "Function", code:
-`function square(n) {
-  return n * n;
-}` }
-      ],
-      intermediate: [
-        { concept: "Array map", code:
-`const nums = [1, 2, 3];
-const doubled = nums.map((n) => n * 2);` },
-        { concept: "filter & reduce", code:
-`const evens = nums.filter((n) => n % 2 === 0);
-const sum = nums.reduce((a, b) => a + b, 0);` },
-        { concept: "Object destructuring", code:
-`const user = { name: "Ada", age: 30 };
-const { name, age } = user;` },
-        { concept: "Ternary", code:
-`const label = age >= 18 ? "adult" : "minor";` }
-      ],
-      advanced: [
-        { concept: "Async / await", code:
-`async function load(id) {
-  const res = await fetch("/api/" + id);
-  if (!res.ok) throw new Error("failed");
-  return res.json();
-}` },
-        { concept: "Closure (debounce)", code:
-`function debounce(fn, ms) {
-  let timer;
-  return (...args) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), ms);
-  };
-}` },
-        { concept: "Promise.all", code:
-`Promise.all([a(), b(), c()])
-  .then(([x, y, z]) => render(x, y, z))
-  .catch((err) => console.error(err));` },
-        { concept: "Class", code:
-`class Stack {
-  constructor() {
-    this.items = [];
-  }
-  push(x) {
-    this.items.push(x);
-  }
-}` }
-      ]
-    },
-
-    typescript: {
-      beginner: [
-        { concept: "Typed variables", code:
-`let count: number = 0;
-let active: boolean = true;` },
-        { concept: "Typed function", code:
-`function add(a: number, b: number): number {
-  return a + b;
-}` },
-        { concept: "Typed array", code:
-`const names: string[] = ["a", "b", "c"];
-const first: string = names[0];` }
-      ],
-      intermediate: [
-        { concept: "Interface", code:
-`interface User {
-  id: number;
-  name: string;
-  email?: string;
-}` },
-        { concept: "Union type", code:
-`type Status = "idle" | "loading" | "done";
-let state: Status = "idle";` },
-        { concept: "Default parameter", code:
-`function greet(name: string, greeting = "hi"): string {
-  return greeting + ", " + name;
-}` }
-      ],
-      advanced: [
-        { concept: "Generic function", code:
-`function identity<T>(value: T): T {
-  return value;
-}` },
-        { concept: "Generic class", code:
-`class Box<T> {
-  constructor(private value: T) {}
-  get(): T {
-    return this.value;
-  }
-}` },
-        { concept: "Discriminated union", code:
-`type Result<T> =
-  | { ok: true; value: T }
-  | { ok: false; error: string };` }
-      ]
-    },
-
-    python: {
-      beginner: [
-        { concept: "Variables & print", code:
-`name = "Ada"
-print("hi", name)` },
-        { concept: "If / elif / else", code:
-`n = 7
-if n > 0:
-    print("positive")
-elif n == 0:
-    print("zero")
-else:
-    print("negative")` },
-        { concept: "For loop", code:
-`for i in range(1, 6):
-    print(i)` }
-      ],
-      intermediate: [
-        { concept: "Function & list", code:
-`def squares(n):
-    return [i * i for i in range(n)]` },
-        { concept: "Dictionary count", code:
-`counts = {}
-for word in words:
-    counts[word] = counts.get(word, 0) + 1` },
-        { concept: "While + break", code:
-`i = 0
-while i < 10:
-    if i == 5:
-        break
-    i += 1` }
-      ],
-      advanced: [
-        { concept: "Class", code:
-`class Point:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
-    def dist(self):
-        return (self.x ** 2 + self.y ** 2) ** 0.5` },
-        { concept: "Decorator", code:
-`def retry(times):
-    def wrap(fn):
-        def inner(*args, **kwargs):
-            return fn(*args, **kwargs)
-        return inner
-    return wrap` },
-        { concept: "Nested comprehension", code:
-`pairs = [(x, y) for x in range(3) for y in range(3) if x != y]
-print(len(pairs))` }
-      ]
-    },
-
-    sql: {
-      beginner: [
-        { concept: "Select all", code:
-`SELECT * FROM users;` },
-        { concept: "Where filter", code:
-`SELECT name, email FROM users WHERE active = true;` },
-        { concept: "Order & limit", code:
-`SELECT name FROM users ORDER BY created_at DESC LIMIT 10;` }
-      ],
-      intermediate: [
-        { concept: "Insert", code:
-`INSERT INTO orders (user_id, total) VALUES (1, 99.50);` },
-        { concept: "Update", code:
-`UPDATE products SET price = price * 1.1 WHERE stock > 0;` },
-        { concept: "Join", code:
-`SELECT u.name, o.total
-FROM users u
-JOIN orders o ON o.user_id = u.id;` }
-      ],
-      advanced: [
-        { concept: "Group & having", code:
-`SELECT category, AVG(price)
-FROM products
-GROUP BY category
-HAVING AVG(price) > 50;` },
-        { concept: "Subquery", code:
-`SELECT name FROM users
-WHERE id IN (SELECT user_id FROM orders WHERE total > 100);` },
-        { concept: "Aggregate join", code:
-`SELECT u.name, COUNT(o.id) AS orders
-FROM users u
-JOIN orders o ON o.user_id = u.id
-GROUP BY u.name;` }
-      ]
-    },
-
-    bash: {
-      beginner: [
-        { concept: "Variables & echo", code:
-`name="Ada"
-echo "hi $name"` },
-        { concept: "If test", code:
-`if [ "$age" -ge 18 ]; then
-  echo "adult"
-fi` },
-        { concept: "For loop", code:
-`for i in 1 2 3 4 5; do
-  echo "$i"
-done` }
-      ],
-      intermediate: [
-        { concept: "Function", code:
-`greet() {
-  echo "hello $1"
-}` },
-        { concept: "While read", code:
-`while read line; do
-  echo "$line"
-done < file.txt` },
-        { concept: "File test", code:
-`if [ -f config.txt ]; then
-  echo "found"
-else
-  exit 1
-fi` }
-      ],
-      advanced: [
-        { concept: "Command substitution", code:
-`count=$(ls | wc -l)
-echo "files: $count"` },
-        { concept: "Case statement", code:
-`case "$1" in
-  start) echo "starting" ;;
-  stop) echo "stopping" ;;
-  *) echo "usage" ;;
-esac` },
-        { concept: "Pipe & grep", code:
-`cat log.txt | grep "error" | wc -l` }
-      ]
-    },
-
-  };
-
   const LANG_NAMES = { python: "Python", sql: "SQL", bash: "Bash", typescript: "TypeScript", javascript: "JavaScript", mix: "Mix" };
-  const LEVEL_NAMES = { beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced", all: "All levels" };
+  const LEVEL_NAMES = { beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced" };
   const LEVEL_ORDER = ["beginner", "intermediate", "advanced"];
 
-  // Short explanation per concept (shared across languages). Keys are concept names;
-  // use "lang|Concept" for language-specific overrides where a name would otherwise collide.
-  const EXPLAIN = {
-    "If / else": "Runs one block when a condition is true, another when it is false.",
-    "If / elif / else": "Checks several conditions in order, running the first that matches.",
-    "For loop": "Repeats a block a fixed number of times using a counter.",
-    "Function": "A reusable, named block of code that takes inputs and returns a result.",
-    "Class": "A blueprint that bundles data and behavior together into objects.",
-    "Struct": "A custom type that groups related fields together.",
-    "Method": "A function that belongs to a class or object.",
-    "Variables & output": "Store a value in a variable, then print it out.",
-    "Variables & print": "Store a value in a variable, then print it out.",
-    "Variables & echo": "Store a value in a variable, then echo it to output.",
-    "Variables": "Declare variables to hold values such as numbers.",
-    "Generic function": "A function that works with any type, decided by the caller.",
-    "Generic method": "A method that works with any type, decided by the caller.",
-    "Generic class": "A class parameterized by a type so it can hold any kind of value.",
-    "Array map": "Transforms each element of an array into a new array.",
-    "filter & reduce": "filter keeps matching items; reduce folds them into one value.",
-    "Object destructuring": "Pulls properties out of an object into separate variables.",
-    "Ternary": "A one-line if/else expression: condition ? a : b.",
-    "Async / await": "Waits for a Promise to resolve without blocking the program.",
-    "Closure (debounce)": "A function that remembers variables from its outer scope.",
-    "Promise.all": "Waits for several Promises to finish, then continues.",
-    "Typed variables": "Variables annotated with a type the compiler checks.",
-    "Typed function": "A function whose parameters and return value have declared types.",
-    "Typed array": "An array whose element type is fixed and checked.",
-    "Interface": "Describes the shape an object must have.",
-    "Union type": "A value that may be one of several listed types.",
-    "Default parameter": "A parameter that falls back to a default when none is passed.",
-    "Discriminated union": "A union of object types told apart by a shared tag field.",
-    "Function & list": "A function that builds and returns a list with a comprehension.",
-    "Dictionary count": "Uses a dictionary to tally how often each item appears.",
-    "While + break": "Loops until a condition, exiting early with break.",
-    "Decorator": "Wraps a function to add behavior without changing its body.",
-    "Nested comprehension": "Builds a list using two loops inside one expression.",
-    "Program & print": "The program entry point that prints output.",
-    "Program & output": "The program entry point that prints output.",
-    "Slice & range": "Iterates a slice, getting both index and value with range.",
-    "Error handling": "Checks the returned error value and handles failure.",
-    "Goroutine & channel": "Runs work concurrently and passes data through a channel.",
-    "Map iteration": "Loops over a map's key/value pairs.",
-    "Method on struct": "A function attached to a struct through a receiver.",
-    "Vec & iterate": "Creates a growable vector and loops over its references.",
-    "Match": "Pattern-matches a value against several arms.",
-    "Iterator chain": "Chains filter/map/collect to transform a sequence.",
-    "Result & error": "Returns Ok or Err to signal success or failure.",
-    "Select all": "Reads every column and row from a table.",
-    "Where filter": "Returns only the rows that match a condition.",
-    "Order & limit": "Sorts rows and caps how many are returned.",
-    "Insert": "Adds a new row of values into a table.",
-    "Update": "Changes column values in rows that match a condition.",
-    "Join": "Combines rows from two tables on a matching key.",
-    "Group & having": "Groups rows and filters the groups by an aggregate.",
-    "Subquery": "A query nested inside another query.",
-    "Aggregate join": "Joins tables and counts or sums the grouped results.",
-    "Array loop": "Iterates an array with a for-each style loop.",
-    "ArrayList": "A resizable list you can keep adding elements to.",
-    "Stream": "Processes a collection with filter/map/reduce-style steps.",
-    "Vector": "A dynamic array from the standard library.",
-    "Template": "Generic code parameterized by a type.",
-    "Smart pointer": "An owning pointer that frees its memory automatically.",
-    "Array": "A fixed-size block of same-type values.",
-    "Pointer": "A variable that stores the memory address of another value.",
-    "Malloc": "Allocates a block of memory on the heap at runtime.",
-    "Function pointer": "A variable that points to a function so it can be called indirectly.",
-    "csharp|List": "A resizable, strongly-typed collection of items.",
-    "Foreach": "Loops over every item in a collection.",
-    "Class & property": "A class with auto-implemented get/set properties.",
-    "LINQ": "Queries collections with expressions like Where and Select.",
-    "Times loop": "Repeats a block a set number of times with n.times.",
-    "Array each": "Runs a block once for each element of an array.",
-    "Hash": "A key/value collection accessed by symbol or string keys.",
-    "Map & select": "map transforms items; select keeps those that pass a test.",
-    "Block & yield": "Passes a block into a method and runs it with yield.",
-    "Array foreach": "Loops over each element of an array.",
-    "Associative array": "An array indexed by string keys instead of numbers.",
-    "Array filter": "Keeps only the array elements that pass a test.",
-    "If test": "Runs commands when a bracket test condition succeeds.",
-    "While read": "Reads input or a file line by line in a loop.",
-    "File test": "Checks file conditions such as existence with -f.",
-    "Command substitution": "Captures a command's output into a variable.",
-    "Case statement": "Branches on a value matching different patterns.",
-    "Pipe & grep": "Chains commands, filtering the output with grep.",
-    "Elements": "Basic tags like headings and paragraphs that structure content.",
-    "Link & image": "Anchor links and embedded images.",
-    "html|List": "Bulleted or numbered lists built with ul/ol and li.",
-    "Form": "Collects user input with fields and a submit button.",
-    "Div & class": "Groups content in a container styled by its class.",
-    "Table": "Displays data in rows and cells.",
-    "Semantic layout": "Meaningful structure tags such as header and nav.",
-    "Head & meta": "Document metadata like character set and title.",
-    "Data attribute": "Custom data-* attributes that store values on an element.",
-    "Selector & color": "Targets elements and sets their text color and size.",
-    "Class selector": "Styles every element that shares a class.",
-    "Box model": "Controls spacing with margin, border, and padding.",
-    "Flexbox": "Lays items out in a flexible row or column.",
-    "Hover state": "Applies styles while the pointer is over an element.",
-    "Grid": "Arranges items into rows and columns.",
-    "Custom properties": "Reusable CSS variables defined with --name.",
-    "Media query": "Applies styles only at certain screen sizes.",
-    "Transition": "Animates property changes smoothly over time."
-  };
-  function explainFor(seg) {
-    return EXPLAIN[seg.lang + "|" + seg.concept] || EXPLAIN[seg.concept]
-      || "A common programming pattern — type it to build muscle memory.";
-  }
-
-  // ---------- DOM ----------
   const $ = (id) => document.getElementById(id);
-  const startPanel = $("startPanel"), gamePanel = $("gamePanel"), resultPanel = $("resultPanel");
-  const modesEl = $("modes"), langsEl = $("langs"), levelsEl = $("levels"), lessonsEl = $("lessons"), lessonWrap = $("lessonWrap"), codeOpts = $("codeOpts"), durationsEl = $("durations");
-  const startBtn = $("startBtn"), againBtn = $("againBtn");
+  const setupPanel = $("setupPanel"), menuPanel = $("menuPanel"), gamePanel = $("gamePanel"), resultPanel = $("resultPanel");
+  const modesEl = $("modes"), langsEl = $("langs"), langWrap = $("langWrap"), durationsEl = $("durations"), timeWrap = $("timeWrap"), startBtn = $("startBtn");
+  const menuBack = $("menuBack"), menuTitle = $("menuTitle"), menuCount = $("menuCount"), menuLevels = $("menuLevels"), menuList = $("menuList");
   const streamEl = $("stream"), capture = $("capture"), gameHint = $("gameHint");
   const conceptBar = $("conceptBar"), conceptName = $("conceptName"), conceptMeta = $("conceptMeta"), conceptExplain = $("conceptExplain");
   const hudTime = $("hudTime"), hudWpm = $("hudWpm"), hudAcc = $("hudAcc"), hudChars = $("hudChars");
   const resWpm = $("resWpm"), resAcc = $("resAcc"), resChars = $("resChars"), resErr = $("resErr"), resBest = $("resBest");
-  const navWrap = $("navWrap"), prevBtn = $("prevBtn"), nextBtn = $("nextBtn"), tryAgainBtn = $("tryAgainBtn"), resultHint = $("resultHint"), timeWrap = $("timeWrap");
+  const navWrap = $("navWrap"), prevBtn = $("prevBtn"), nextBtn = $("nextBtn"), tryAgainBtn = $("tryAgainBtn"), againBtn = $("againBtn"), menuBtn = $("menuBtn"), resultHint = $("resultHint");
 
-  // ---------- State ----------
-  let mode = "code", lang = "python", level = "beginner", duration = 30;
+  let mode = "code", lang = "python", level = "beginner", lesson = "all", duration = 30;
   let state = "idle";
-  let target = "", typed = [], pos = 0;
-  let correctChars = 0, totalKeys = 0;
+  let target = "", typed = [], pos = 0, correctChars = 0, totalKeys = 0;
   let startTime = 0, timerId = null;
-  let codeQueue = [], segments = [], curSegIdx = -1;
-  let lesson = "all", feedSnippets = [], orderMode = false, singleRun = false, justStarted = false;
-
+  let segments = [], curSegIdx = -1, feedSnippets = [], codeQueue = [], orderMode = false, singleRun = false, justStarted = false;
   const BEST_PREFIX = "typingRaceDevBest";
 
-  function shuffle(arr) {
-    const a = arr.slice();
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
+  function shuffle(arr) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  function escHtml(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function lessonsFor(lk, lv) { return (CURRICULUM[lk] && CURRICULUM[lk][lv]) || []; }
+  function lessonsActive() { return mode === "code" && lang !== "mix"; }
+
+  // ---------- Setup ----------
+  modesEl.addEventListener("click", (e) => { const b = e.target.closest("[data-mode]"); if (!b) return; sel(modesEl, b); mode = b.dataset.mode; refreshSetup(); });
+  langsEl.addEventListener("click", (e) => { const b = e.target.closest("[data-lang]"); if (!b) return; sel(langsEl, b); lang = b.dataset.lang; refreshSetup(); });
+  durationsEl.addEventListener("click", (e) => { const b = e.target.closest("[data-sec]"); if (!b) return; sel(durationsEl, b); duration = parseInt(b.dataset.sec, 10); });
+  function sel(group, btn) { [...group.children].forEach((x) => x.classList.remove("active")); btn.classList.add("active"); }
+
+  function refreshSetup() {
+    langWrap.classList.toggle("hidden", mode !== "code");
+    const racePath = (mode === "english") || (mode === "code" && lang === "mix");
+    timeWrap.classList.toggle("hidden", !racePath);
+    startBtn.innerHTML = racePath ? "Start race &nbsp;→" : "Choose a lesson &nbsp;→";
   }
+  refreshSetup();
 
-  // ---------- Selectors ----------
-  modesEl.addEventListener("click", (e) => {
-    const b = e.target.closest("[data-mode]"); if (!b) return;
-    [...modesEl.children].forEach((x) => x.classList.remove("active"));
-    b.classList.add("active"); mode = b.dataset.mode;
-    refreshOpts();
-  });
-  langsEl.addEventListener("click", (e) => {
-    const b = e.target.closest("[data-lang]"); if (!b) return;
-    [...langsEl.children].forEach((x) => x.classList.remove("active"));
-    b.classList.add("active"); lang = b.dataset.lang;
-    refreshOpts();
-  });
-  levelsEl.addEventListener("click", (e) => {
-    const b = e.target.closest("[data-level]"); if (!b) return;
-    [...levelsEl.children].forEach((x) => x.classList.remove("active"));
-    b.classList.add("active"); level = b.dataset.level;
-    refreshOpts();
-  });
-  lessonsEl.addEventListener("click", (e) => {
-    const b = e.target.closest("[data-lesson]"); if (!b) return;
-    [...lessonsEl.children].forEach((x) => x.classList.remove("active"));
-    b.classList.add("active"); lesson = b.dataset.lesson;
-  });
-  durationsEl.addEventListener("click", (e) => {
-    const b = e.target.closest("[data-sec]"); if (!b) return;
-    [...durationsEl.children].forEach((x) => x.classList.remove("active"));
-    b.classList.add("active"); duration = parseInt(b.dataset.sec, 10);
-  });
+  function show(panel) { [setupPanel, menuPanel, gamePanel, resultPanel].forEach((p) => p.classList.add("hidden")); panel.classList.remove("hidden"); }
 
-  function escapeHtml(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
-  function lessonsActive() { return mode === "code" && lang !== "mix" && level !== "all"; }
-  function rebuildLessons() {
-    const showIt = lessonsActive();
-    lessonWrap.classList.toggle("hidden", !showIt);
-    if (!showIt) { lesson = "all"; lessonsEl.innerHTML = ""; return; }
-    const arr = (CURRICULUM[lang] && CURRICULUM[lang][level]) || [];
-    let html = '<button class="opt-btn active" data-lesson="all">All · in order</button>';
+  startBtn.addEventListener("click", () => { if (lessonsActive()) openMenu("setup"); else startGame(); });
+
+  // ---------- Lesson menu ----------
+  let menuReturn = setupPanel;
+  function openMenu(from) { menuReturn = (from === "result") ? resultPanel : setupPanel; renderMenu(); show(menuPanel); }
+  menuBack.addEventListener("click", () => show(menuReturn));
+  menuLevels.addEventListener("click", (e) => { const b = e.target.closest("[data-level]"); if (!b) return; sel(menuLevels, b); level = b.dataset.level; renderMenu(); });
+  menuList.addEventListener("click", (e) => { const b = e.target.closest("[data-lesson]"); if (!b) return; lesson = b.dataset.lesson; startGame(); });
+
+  function renderMenu() {
+    menuTitle.textContent = LANG_NAMES[lang];
+    [...menuLevels.children].forEach((b) => b.classList.toggle("active", b.dataset.level === level));
+    const arr = lessonsFor(lang, level);
+    menuCount.textContent = arr.length + " lessons";
+    let html = '<button class="lesson-item all" data-lesson="all"><span class="li-num">▶</span><span class="li-body"><span class="li-title">All · in order</span><span class="li-sub">Type every lesson in this level back to back</span></span></button>';
     arr.forEach((s, i) => {
-      html += '<button class="opt-btn" data-lesson="' + i + '">' + (i + 1) + '. ' + escapeHtml(s.concept) + '</button>';
+      html += '<button class="lesson-item" data-lesson="' + i + '"><span class="li-num">' + (i + 1) + '</span><span class="li-body"><span class="li-title">' + escHtml(s.title) + '</span><span class="li-sub">' + escHtml(s.explain) + '</span></span></button>';
     });
-    lessonsEl.innerHTML = html;
-    lesson = "all";
-  }
-  function refreshOpts() {
-    codeOpts.classList.toggle("hidden", mode !== "code");
-    rebuildLessons();
-    timeWrap.classList.toggle("hidden", lessonsActive());
-  }
-  refreshOpts();
-
-  function show(panel) {
-    [startPanel, gamePanel, resultPanel].forEach((p) => p.classList.add("hidden"));
-    panel.classList.remove("hidden");
+    menuList.innerHTML = html;
+    menuList.scrollTop = 0;
   }
 
-  // ---------- Snippet pool ----------
-  function poolSnippets() {
-    const langs = lang === "mix" ? Object.keys(CURRICULUM) : [lang];
-    const levels = level === "all" ? LEVEL_ORDER : [level];
+  // ---------- Snippet feeding ----------
+  function allLessonsFlat() {
     const out = [];
-    for (const L of langs) {
-      const langObj = CURRICULUM[L]; if (!langObj) continue;
-      for (const lv of levels) {
-        const arr = langObj[lv] || [];
-        for (const s of arr) out.push({ concept: s.concept, code: s.code, lang: L, level: lv });
-      }
-    }
+    for (const lk of Object.keys(CURRICULUM)) for (const lv of LEVEL_ORDER) for (const s of lessonsFor(lk, lv)) out.push({ title: s.title, code: s.code, explain: s.explain, lang: lk, level: lv });
     return out;
   }
-  function nextSnippet() {
-    if (codeQueue.length === 0) codeQueue = orderMode ? feedSnippets.slice() : shuffle(feedSnippets);
-    return codeQueue.shift();
-  }
-  function pushSnippet(snip) {
-    segments.push({ start: target.length, concept: snip.concept, lang: snip.lang, level: snip.level, lessonNo: snip.lessonNo });
-    target += snip.code;
-  }
+  function nextSnippet() { if (feedSnippets.length === 0) return null; if (codeQueue.length === 0) codeQueue = orderMode ? feedSnippets.slice() : shuffle(feedSnippets); return codeQueue.shift(); }
+  function pushSnippet(snip) { segments.push({ start: target.length, title: snip.title, explain: snip.explain, lang: snip.lang, level: snip.level, lessonNo: snip.lessonNo }); target += snip.code; }
 
-  // Flattened lesson list across all levels of the current language (for Prev/Next nav)
-  function flatLessons() {
-    const out = [];
-    if (lang === "mix") return out;
-    for (const lv of LEVEL_ORDER) {
-      const arr = (CURRICULUM[lang] && CURRICULUM[lang][lv]) || [];
-      arr.forEach((s, i) => out.push({ level: lv, idx: i }));
-    }
-    return out;
-  }
+  function flatLessons() { const out = []; if (lang === "mix") return out; for (const lv of LEVEL_ORDER) lessonsFor(lang, lv).forEach((s, i) => out.push({ level: lv, idx: i })); return out; }
 
   function buildInitialTarget() {
     target = ""; segments = []; curSegIdx = -1; codeQueue = [];
     if (mode === "english") {
-      target = shuffle(WORDS).slice(0, 90).join(" ");
-      singleRun = false;
-    } else if (lessonsActive()) {
-      // Lesson learning mode: play the chosen lesson(s) once, then finish on completion.
+      target = shuffle(WORDS).slice(0, 90).join(" "); singleRun = false;
+    } else if (lang === "mix") {
+      singleRun = false; feedSnippets = allLessonsFlat(); orderMode = false; pushSnippet(nextSnippet());
+    } else {
       singleRun = true;
-      const arr = (CURRICULUM[lang] && CURRICULUM[lang][level]) || [];
-      const mapped = arr.map((s, i) => ({ concept: s.concept, code: s.code, lang: lang, level: level, lessonNo: i + 1 }));
+      const arr = lessonsFor(lang, level);
+      const mapped = arr.map((s, i) => ({ title: s.title, code: s.code, explain: s.explain, lang: lang, level: level, lessonNo: i + 1 }));
       const seq = (lesson === "all") ? mapped : [mapped[Number(lesson)]];
       seq.forEach((sn, i) => { if (i > 0) target += "\n\n"; pushSnippet(sn); });
-    } else {
-      // Mix / All-levels: endless timed race.
-      singleRun = false;
-      feedSnippets = poolSnippets(); orderMode = false;
-      pushSnippet(nextSnippet());
     }
   }
-  function extend() {
-    if (mode === "english") target += " " + shuffle(WORDS).slice(0, 50).join(" ");
-    else { target += "\n\n"; pushSnippet(nextSnippet()); }
-  }
+  function extend() { if (mode === "english") target += " " + shuffle(WORDS).slice(0, 50).join(" "); else { target += "\n\n"; pushSnippet(nextSnippet()); } }
   function maybeExtend() { if (!singleRun && pos > target.length - 80) extend(); }
 
   function updateConcept() {
@@ -734,13 +331,13 @@ esac` },
     curSegIdx = idx;
     const seg = segments[idx];
     if (seg) {
-      conceptName.textContent = (seg.lessonNo ? ("Lesson " + seg.lessonNo + " · ") : "") + seg.concept;
+      conceptName.textContent = (seg.lessonNo ? ("Lesson " + seg.lessonNo + " · ") : "") + seg.title;
       conceptMeta.textContent = LANG_NAMES[seg.lang] + " · " + LEVEL_NAMES[seg.level];
-      conceptExplain.textContent = explainFor(seg);
+      conceptExplain.textContent = seg.explain || "";
     }
   }
 
-  // ---------- Start ----------
+  // ---------- Start / timer ----------
   function startGame() {
     state = "running"; justStarted = true;
     pos = 0; typed = []; correctChars = 0; totalKeys = 0; startTime = 0;
@@ -758,19 +355,11 @@ esac` },
     capture.value = ""; capture.focus();
     if (timerId) clearInterval(timerId);
   }
-
   function beginTimer() { startTime = performance.now(); timerId = setInterval(tick, 100); }
   function tick() {
     const elapsed = (performance.now() - startTime) / 1000;
-    if (singleRun) {
-      hudTime.textContent = Math.floor(elapsed);   // count up; ends on completion
-      liveStats(elapsed);
-    } else {
-      const remaining = Math.max(0, duration - elapsed);
-      hudTime.textContent = Math.ceil(remaining);
-      liveStats(elapsed);
-      if (remaining <= 0) finish();
-    }
+    if (singleRun) { hudTime.textContent = Math.floor(elapsed); liveStats(elapsed); }
+    else { const remaining = Math.max(0, duration - elapsed); hudTime.textContent = Math.ceil(remaining); liveStats(elapsed); if (remaining <= 0) finish(); }
   }
   function liveStats(elapsed) {
     const mins = elapsed / 60;
@@ -783,8 +372,8 @@ esac` },
   capture.addEventListener("input", () => { capture.value = ""; });
   capture.addEventListener("keydown", (e) => {
     if (state !== "running") return;
-    if (e.repeat) { e.preventDefault(); return; }   // ignore held-key auto-repeat
-    if (justStarted) { justStarted = false; if (e.key === "Enter") { e.preventDefault(); return; } }  // swallow the Enter that launched this run
+    if (e.repeat) { e.preventDefault(); return; }
+    if (justStarted) { justStarted = false; if (e.key === "Enter") { e.preventDefault(); return; } }
     if (e.key === "Escape") { e.preventDefault(); startGame(); return; }
     if (startTime === 0 && (e.key.length === 1 || e.key === "Enter")) beginTimer();
     if (e.key === "Backspace") { e.preventDefault(); backspace(); return; }
@@ -792,7 +381,6 @@ esac` },
     if (e.key === "Enter") { e.preventDefault(); handleEnter(); return; }
     if (e.key.length === 1) handleChar(e.key);
   });
-
   function handleChar(ch) {
     if (pos >= target.length) return;
     const expected = target[pos];
@@ -814,8 +402,7 @@ esac` },
   function backspace() {
     if (pos <= 0) return;
     pos--;
-    while (pos > 0 && typed[pos] !== undefined && (target[pos] === " " || target[pos] === "\t")
-           && typed[pos] === target[pos] && target[pos - 1] !== undefined) {
+    while (pos > 0 && typed[pos] !== undefined && (target[pos] === " " || target[pos] === "\t") && typed[pos] === target[pos] && target[pos - 1] !== undefined) {
       if (target[pos - 1] === "\n" || target[pos - 1] === " " || target[pos - 1] === "\t") pos--; else break;
     }
     typed[pos] = undefined; render();
@@ -830,34 +417,19 @@ esac` },
     const to = Math.min(target.length, pos + 280);
     let html = "";
     for (let i = from; i < to; i++) {
-      const ch = target[i];
-      const isCaret = i === pos;
-      let cls = "ch";
+      const ch = target[i]; const isCaret = i === pos; let cls = "ch";
       if (i < pos) cls += (typed[i] === target[i]) ? " ok" : " bad";
       const idAttr = isCaret ? ' id="crt"' : "";
-      if (ch === "\n") {
-        if (isCaret) cls += " caret";
-        html += '<span class="' + cls + ' nl"' + idAttr + '>↵</span>\n';
-      } else if (ch === " ") {
-        if (i < pos && typed[i] !== " ") cls += " badspace";
-        if (isCaret) cls += " caret";
-        html += '<span class="' + cls + '"' + idAttr + '> </span>';
-      } else {
-        if (isCaret) cls += " caret";
-        html += '<span class="' + cls + '"' + idAttr + '>' + esc(ch) + '</span>';
-      }
+      if (ch === "\n") { if (isCaret) cls += " caret"; html += '<span class="' + cls + ' nl"' + idAttr + '>↵</span>\n'; }
+      else if (ch === " ") { if (i < pos && typed[i] !== " ") cls += " badspace"; if (isCaret) cls += " caret"; html += '<span class="' + cls + '"' + idAttr + '> </span>'; }
+      else { if (isCaret) cls += " caret"; html += '<span class="' + cls + '"' + idAttr + '>' + esc(ch) + '</span>'; }
     }
     streamEl.innerHTML = html;
     const cr = $("crt");
     if (cr) {
-      // cr.offsetTop is relative to streamEl (its position:relative offsetParent) — keep the caret line in view.
-      const caretTop = cr.offsetTop;
-      const caretBottom = caretTop + (cr.offsetHeight || 28);
-      if (caretTop < streamEl.scrollTop + 4) {
-        streamEl.scrollTop = Math.max(0, caretTop - 8);
-      } else if (caretBottom > streamEl.scrollTop + streamEl.clientHeight - 4) {
-        streamEl.scrollTop = caretBottom - streamEl.clientHeight + 8;
-      }
+      const caretTop = cr.offsetTop, caretBottom = caretTop + (cr.offsetHeight || 28);
+      if (caretTop < streamEl.scrollTop + 4) streamEl.scrollTop = Math.max(0, caretTop - 8);
+      else if (caretBottom > streamEl.scrollTop + streamEl.clientHeight - 4) streamEl.scrollTop = caretBottom - streamEl.clientHeight + 8;
     }
     updateConcept();
   }
@@ -869,87 +441,72 @@ esac` },
     const elapsed = startTime ? Math.max(0.5, (performance.now() - startTime) / 1000) : duration;
     const wpm = Math.round((correctChars / 5) / (elapsed / 60));
     const acc = totalKeys > 0 ? Math.round((correctChars / totalKeys) * 100) : 100;
-    resWpm.textContent = wpm; resAcc.textContent = acc + "%";
-    resChars.textContent = totalKeys; resErr.textContent = totalKeys - correctChars;
+    resWpm.textContent = wpm; resAcc.textContent = acc + "%"; resChars.textContent = totalKeys; resErr.textContent = totalKeys - correctChars;
 
     let tag, labelName;
-    if (mode === "code") {
+    if (mode === "code" && lang !== "mix") {
       const lvl = LANG_NAMES[lang] + " · " + LEVEL_NAMES[level];
-      if (lessonsActive() && lesson !== "all") { tag = "code_" + lang + "_" + level + "_L" + lesson; labelName = lvl + " · Lesson " + (Number(lesson) + 1); }
-      else if (lessonsActive()) { tag = "code_" + lang + "_" + level + "_all"; labelName = lvl + " · All"; }
-      else { tag = "code_" + lang + "_" + level; labelName = lvl; }
-    } else { tag = "english"; labelName = "Words"; }
+      if (lesson !== "all") { tag = "code_" + lang + "_" + level + "_L" + lesson; labelName = lvl + " · Lesson " + (Number(lesson) + 1); }
+      else { tag = "code_" + lang + "_" + level + "_all"; labelName = lvl + " · All"; }
+    } else if (mode === "code") { tag = "code_mix_" + duration; labelName = "Mix · " + duration + "s"; }
+    else { tag = "english_" + duration; labelName = "Words · " + duration + "s"; }
     const key = BEST_PREFIX + "_" + tag;
-    let best = 0;
-    try { best = parseInt(localStorage.getItem(key) || "0", 10) || 0; } catch (e) {}
-    if (wpm > best && wpm <= 400) {   // cap guards against a sub-second completion recording an unbeatable best
+    let best = 0; try { best = parseInt(localStorage.getItem(key) || "0", 10) || 0; } catch (e) {}
+    if (wpm > best && wpm <= 400) {
       try { localStorage.setItem(key, String(wpm)); } catch (e) {}
-      resBest.textContent = "🏆 New best — " + labelName + "!";
-      resBest.classList.add("new");
-    } else {
-      resBest.textContent = "Best (" + labelName + "): " + best + " WPM";
-      resBest.classList.remove("new");
-    }
+      resBest.textContent = "🏆 New best — " + labelName + "!"; resBest.classList.add("new");
+    } else { resBest.textContent = "Best (" + labelName + "): " + best + " WPM"; resBest.classList.remove("new"); }
 
-    // Single-lesson runs get Prev / Try Again / Next nav; everything else gets "Race again".
-    const single = lessonsActive() && lesson !== "all";
+    const lessonsMode = lessonsActive();
+    const single = lessonsMode && lesson !== "all";
     navWrap.classList.toggle("hidden", !single);
     againBtn.classList.toggle("hidden", single);
+    menuBtn.classList.toggle("hidden", !lessonsMode);
+    if (!single) againBtn.innerHTML = lessonsMode ? "Practice again &nbsp;↵" : "Race again &nbsp;↵";
     if (single) {
       const flat = flatLessons();
       const ci = flat.findIndex((f) => f.level === level && f.idx === Number(lesson));
       prevBtn.disabled = (ci <= 0);
       nextBtn.disabled = (ci < 0 || ci >= flat.length - 1);
-      resultHint.innerHTML = nextBtn.disabled
-        ? 'Last lesson 🎉 &nbsp;·&nbsp; <kbd>Enter</kbd>/<kbd>Esc</kbd> try again'
-        : '<kbd>Enter</kbd> next lesson &nbsp;·&nbsp; <kbd>Esc</kbd> try again';
+      resultHint.innerHTML = nextBtn.disabled ? 'Last lesson 🎉 &nbsp;·&nbsp; <kbd>Enter</kbd>/<kbd>Esc</kbd> try again' : '<kbd>Enter</kbd> next lesson &nbsp;·&nbsp; <kbd>Esc</kbd> try again';
     } else {
       resultHint.innerHTML = 'Press <kbd>Enter</kbd> or <kbd>Esc</kbd> to replay';
     }
-
     show(resultPanel);
     (single ? (nextBtn.disabled ? tryAgainBtn : nextBtn) : againBtn).focus();
   }
 
-  // Move to the previous/next lesson (crossing level boundaries), then start it.
   function gotoLesson(dir) {
     const flat = flatLessons();
     const ci = flat.findIndex((f) => f.level === level && f.idx === Number(lesson));
     const ni = ci + dir;
     if (ni < 0 || ni >= flat.length) return;
     const t = flat[ni];
-    level = t.level;
-    [...levelsEl.children].forEach((x) => x.classList.toggle("active", x.dataset.level === level));
-    refreshOpts();              // rebuilds the lesson row for the (possibly new) level
-    lesson = String(t.idx);     // select the target lesson after the rebuild
-    [...lessonsEl.children].forEach((x) => x.classList.toggle("active", x.dataset.lesson === lesson));
+    level = t.level; lesson = String(t.idx);
     startGame();
   }
 
   // ---------- Controls ----------
-  startBtn.addEventListener("click", startGame);
   againBtn.addEventListener("click", startGame);
   tryAgainBtn.addEventListener("click", startGame);
   prevBtn.addEventListener("click", () => gotoLesson(-1));
   nextBtn.addEventListener("click", () => gotoLesson(1));
+  menuBtn.addEventListener("click", () => openMenu("result"));
   conceptBar.addEventListener("click", () => { conceptExplain.classList.toggle("hidden"); });
   gamePanel.addEventListener("click", () => { if (state === "running") capture.focus(); });
-  // Keep the right results button focused even if the user clicks dead space, so the focus ring stays truthful.
   resultPanel.addEventListener("click", (e) => {
     if (state === "finished" && !e.target.closest("button")) {
       const single = lessonsActive() && lesson !== "all";
       (single ? (nextBtn.disabled ? tryAgainBtn : nextBtn) : againBtn).focus();
     }
   });
-  // Drive Enter/Esc on the results screen explicitly so they work regardless of which element holds focus.
   document.addEventListener("keydown", (e) => {
-    if (state !== "finished") return;
+    if (state !== "finished" || resultPanel.classList.contains("hidden")) return;
     if (e.key === "Escape") { e.preventDefault(); startGame(); return; }
     if (e.key === "Enter") {
       e.preventDefault();
       const single = lessonsActive() && lesson !== "all";
-      if (single && !nextBtn.disabled) gotoLesson(1);
-      else startGame();
+      if (single && !nextBtn.disabled) gotoLesson(1); else startGame();
     }
   });
 })();
