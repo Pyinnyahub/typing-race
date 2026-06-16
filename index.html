@@ -50,6 +50,16 @@
   }
   .btn-primary:hover { filter: brightness(1.08); }
   .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; filter: none; transform: none; }
+  .nav-row { display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: 10px; margin-top: 6px; }
+  .nav-row .btn-primary { margin-top: 0; }
+  .btn-sec {
+    background: transparent; border: 1.5px solid var(--pending); color: var(--text);
+    padding: 14px 8px; border-radius: 10px; font-family: inherit; font-size: 0.95rem; font-weight: 700;
+    cursor: pointer; transition: all 0.15s ease;
+  }
+  .btn-sec:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .btn-sec:disabled { opacity: 0.35; cursor: not-allowed; }
 
   /* HUD */
   .hud { display: flex; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
@@ -147,12 +157,14 @@
       </div>
     </div>
 
-    <div class="label">Time</div>
-    <div class="row" id="durations">
-      <button class="opt-btn" data-sec="15">15s</button>
-      <button class="opt-btn active" data-sec="30">30s</button>
-      <button class="opt-btn" data-sec="60">60s</button>
-      <button class="opt-btn" data-sec="120">120s</button>
+    <div id="timeWrap">
+      <div class="label">Time</div>
+      <div class="row" id="durations">
+        <button class="opt-btn" data-sec="15">15s</button>
+        <button class="opt-btn active" data-sec="30">30s</button>
+        <button class="opt-btn" data-sec="60">60s</button>
+        <button class="opt-btn" data-sec="120">120s</button>
+      </div>
     </div>
     <button class="btn-primary" id="startBtn">Start typing</button>
   </div>
@@ -185,7 +197,12 @@
       <div class="res-cell"><div class="v" id="resErr">0</div><div class="k">Errors</div></div>
     </div>
     <button class="btn-primary" id="againBtn">Race again &nbsp;↵</button>
-    <div class="hint" style="margin-top:14px">Press <kbd>Enter</kbd> or <kbd>Esc</kbd> to replay</div>
+    <div class="nav-row hidden" id="navWrap">
+      <button class="btn-sec" id="prevBtn">←&nbsp;Previous</button>
+      <button class="btn-sec" id="tryAgainBtn">↻&nbsp;Try Again</button>
+      <button class="btn-primary" id="nextBtn">Next&nbsp;→</button>
+    </div>
+    <div class="hint" id="resultHint" style="margin-top:14px">Press <kbd>Enter</kbd> or <kbd>Esc</kbd> to replay</div>
   </div>
 </div>
 
@@ -571,6 +588,7 @@ esac` },
   const conceptBar = $("conceptBar"), conceptName = $("conceptName"), conceptMeta = $("conceptMeta"), conceptExplain = $("conceptExplain");
   const hudTime = $("hudTime"), hudWpm = $("hudWpm"), hudAcc = $("hudAcc"), hudChars = $("hudChars");
   const resWpm = $("resWpm"), resAcc = $("resAcc"), resChars = $("resChars"), resErr = $("resErr"), resBest = $("resBest");
+  const navWrap = $("navWrap"), prevBtn = $("prevBtn"), nextBtn = $("nextBtn"), tryAgainBtn = $("tryAgainBtn"), resultHint = $("resultHint"), timeWrap = $("timeWrap");
 
   // ---------- State ----------
   let mode = "code", lang = "python", level = "beginner", duration = 30;
@@ -579,7 +597,7 @@ esac` },
   let correctChars = 0, totalKeys = 0;
   let startTime = 0, timerId = null;
   let codeQueue = [], segments = [], curSegIdx = -1;
-  let lesson = "all", feedSnippets = [], orderMode = false;
+  let lesson = "all", feedSnippets = [], orderMode = false, singleRun = false, justStarted = false;
 
   const BEST_PREFIX = "typingRaceDevBest";
 
@@ -597,20 +615,19 @@ esac` },
     const b = e.target.closest("[data-mode]"); if (!b) return;
     [...modesEl.children].forEach((x) => x.classList.remove("active"));
     b.classList.add("active"); mode = b.dataset.mode;
-    codeOpts.classList.toggle("hidden", mode !== "code");
-    rebuildLessons();
+    refreshOpts();
   });
   langsEl.addEventListener("click", (e) => {
     const b = e.target.closest("[data-lang]"); if (!b) return;
     [...langsEl.children].forEach((x) => x.classList.remove("active"));
     b.classList.add("active"); lang = b.dataset.lang;
-    rebuildLessons();
+    refreshOpts();
   });
   levelsEl.addEventListener("click", (e) => {
     const b = e.target.closest("[data-level]"); if (!b) return;
     [...levelsEl.children].forEach((x) => x.classList.remove("active"));
     b.classList.add("active"); level = b.dataset.level;
-    rebuildLessons();
+    refreshOpts();
   });
   lessonsEl.addEventListener("click", (e) => {
     const b = e.target.closest("[data-lesson]"); if (!b) return;
@@ -637,7 +654,12 @@ esac` },
     lessonsEl.innerHTML = html;
     lesson = "all";
   }
-  rebuildLessons();
+  function refreshOpts() {
+    codeOpts.classList.toggle("hidden", mode !== "code");
+    rebuildLessons();
+    timeWrap.classList.toggle("hidden", lessonsActive());
+  }
+  refreshOpts();
 
   function show(panel) {
     [startPanel, gamePanel, resultPanel].forEach((p) => p.classList.add("hidden"));
@@ -658,15 +680,6 @@ esac` },
     }
     return out;
   }
-  function feedFor() {
-    if (lessonsActive()) {
-      const arr = (CURRICULUM[lang] && CURRICULUM[lang][level]) || [];
-      const mapped = arr.map((s, i) => ({ concept: s.concept, code: s.code, lang: lang, level: level, lessonNo: i + 1 }));
-      if (lesson === "all") return { items: mapped, ordered: true };
-      return { items: [mapped[Number(lesson)]], ordered: true };
-    }
-    return { items: poolSnippets(), ordered: false };
-  }
   function nextSnippet() {
     if (codeQueue.length === 0) codeQueue = orderMode ? feedSnippets.slice() : shuffle(feedSnippets);
     return codeQueue.shift();
@@ -676,13 +689,33 @@ esac` },
     target += snip.code;
   }
 
+  // Flattened lesson list across all levels of the current language (for Prev/Next nav)
+  function flatLessons() {
+    const out = [];
+    if (lang === "mix") return out;
+    for (const lv of LEVEL_ORDER) {
+      const arr = (CURRICULUM[lang] && CURRICULUM[lang][lv]) || [];
+      arr.forEach((s, i) => out.push({ level: lv, idx: i }));
+    }
+    return out;
+  }
+
   function buildInitialTarget() {
     target = ""; segments = []; curSegIdx = -1; codeQueue = [];
     if (mode === "english") {
       target = shuffle(WORDS).slice(0, 90).join(" ");
+      singleRun = false;
+    } else if (lessonsActive()) {
+      // Lesson learning mode: play the chosen lesson(s) once, then finish on completion.
+      singleRun = true;
+      const arr = (CURRICULUM[lang] && CURRICULUM[lang][level]) || [];
+      const mapped = arr.map((s, i) => ({ concept: s.concept, code: s.code, lang: lang, level: level, lessonNo: i + 1 }));
+      const seq = (lesson === "all") ? mapped : [mapped[Number(lesson)]];
+      seq.forEach((sn, i) => { if (i > 0) target += "\n\n"; pushSnippet(sn); });
     } else {
-      const feed = feedFor();
-      feedSnippets = feed.items; orderMode = feed.ordered;
+      // Mix / All-levels: endless timed race.
+      singleRun = false;
+      feedSnippets = poolSnippets(); orderMode = false;
       pushSnippet(nextSnippet());
     }
   }
@@ -690,7 +723,7 @@ esac` },
     if (mode === "english") target += " " + shuffle(WORDS).slice(0, 50).join(" ");
     else { target += "\n\n"; pushSnippet(nextSnippet()); }
   }
-  function maybeExtend() { if (pos > target.length - 80) extend(); }
+  function maybeExtend() { if (!singleRun && pos > target.length - 80) extend(); }
 
   function updateConcept() {
     if (mode !== "code") { conceptBar.classList.add("hidden"); conceptExplain.classList.add("hidden"); return; }
@@ -709,16 +742,18 @@ esac` },
 
   // ---------- Start ----------
   function startGame() {
-    state = "running";
+    state = "running"; justStarted = true;
     pos = 0; typed = []; correctChars = 0; totalKeys = 0; startTime = 0;
     buildInitialTarget();
     streamEl.className = "stream" + (mode === "english" ? " english" : "");
     gameHint.innerHTML = mode === "english"
       ? 'Just start typing &nbsp;·&nbsp; <kbd>space</kbd> next word &nbsp;·&nbsp; <kbd>Esc</kbd> restart'
-      : 'Just start typing &nbsp;·&nbsp; <kbd>Enter</kbd> new line &nbsp;·&nbsp; indent auto-skips &nbsp;·&nbsp; <kbd>Esc</kbd> restart';
+      : (singleRun
+          ? 'Type to the end to finish &nbsp;·&nbsp; <kbd>Enter</kbd> new line &nbsp;·&nbsp; indent auto-skips &nbsp;·&nbsp; <kbd>Esc</kbd> restart'
+          : 'Just start typing &nbsp;·&nbsp; <kbd>Enter</kbd> new line &nbsp;·&nbsp; indent auto-skips &nbsp;·&nbsp; <kbd>Esc</kbd> restart');
     show(gamePanel);
     conceptExplain.classList.add("hidden");
-    hudTime.textContent = duration; hudWpm.textContent = "0"; hudAcc.textContent = "100%"; hudChars.textContent = "0";
+    hudTime.textContent = singleRun ? "0" : duration; hudWpm.textContent = "0"; hudAcc.textContent = "100%"; hudChars.textContent = "0";
     render();
     capture.value = ""; capture.focus();
     if (timerId) clearInterval(timerId);
@@ -727,10 +762,15 @@ esac` },
   function beginTimer() { startTime = performance.now(); timerId = setInterval(tick, 100); }
   function tick() {
     const elapsed = (performance.now() - startTime) / 1000;
-    const remaining = Math.max(0, duration - elapsed);
-    hudTime.textContent = Math.ceil(remaining);
-    liveStats(elapsed);
-    if (remaining <= 0) finish();
+    if (singleRun) {
+      hudTime.textContent = Math.floor(elapsed);   // count up; ends on completion
+      liveStats(elapsed);
+    } else {
+      const remaining = Math.max(0, duration - elapsed);
+      hudTime.textContent = Math.ceil(remaining);
+      liveStats(elapsed);
+      if (remaining <= 0) finish();
+    }
   }
   function liveStats(elapsed) {
     const mins = elapsed / 60;
@@ -743,6 +783,8 @@ esac` },
   capture.addEventListener("input", () => { capture.value = ""; });
   capture.addEventListener("keydown", (e) => {
     if (state !== "running") return;
+    if (e.repeat) { e.preventDefault(); return; }   // ignore held-key auto-repeat
+    if (justStarted) { justStarted = false; if (e.key === "Enter") { e.preventDefault(); return; } }  // swallow the Enter that launched this run
     if (e.key === "Escape") { e.preventDefault(); startGame(); return; }
     if (startTime === 0 && (e.key.length === 1 || e.key === "Enter")) beginTimer();
     if (e.key === "Backspace") { e.preventDefault(); backspace(); return; }
@@ -758,16 +800,17 @@ esac` },
     totalKeys++;
     if (ch === expected) correctChars++; else flashError();
     typed[pos] = ch; pos++;
-    maybeExtend(); render();
+    maybeExtend(); render(); checkComplete();
   }
   function handleEnter() {
     const expected = target[pos];
     if (expected === "\n") {
       totalKeys++; correctChars++; typed[pos] = "\n"; pos++;
       while (pos < target.length && (target[pos] === " " || target[pos] === "\t")) { typed[pos] = target[pos]; pos++; }
-      maybeExtend(); render();
+      maybeExtend(); render(); checkComplete();
     } else { totalKeys++; flashError(); }
   }
+  function checkComplete() { if (singleRun && state === "running" && pos >= target.length) finish(); }
   function backspace() {
     if (pos <= 0) return;
     pos--;
@@ -818,18 +861,23 @@ esac` },
   function finish() {
     if (timerId) clearInterval(timerId);
     state = "finished";
-    const mins = duration / 60;
-    const wpm = Math.round((correctChars / 5) / mins);
+    const elapsed = startTime ? Math.max(0.5, (performance.now() - startTime) / 1000) : duration;
+    const wpm = Math.round((correctChars / 5) / (elapsed / 60));
     const acc = totalKeys > 0 ? Math.round((correctChars / totalKeys) * 100) : 100;
     resWpm.textContent = wpm; resAcc.textContent = acc + "%";
     resChars.textContent = totalKeys; resErr.textContent = totalKeys - correctChars;
 
-    const tag = mode === "code" ? ("code_" + lang + "_" + level) : "english";
-    const labelName = mode === "code" ? (LANG_NAMES[lang] + " · " + LEVEL_NAMES[level]) : "Words";
+    let tag, labelName;
+    if (mode === "code") {
+      const lvl = LANG_NAMES[lang] + " · " + LEVEL_NAMES[level];
+      if (lessonsActive() && lesson !== "all") { tag = "code_" + lang + "_" + level + "_L" + lesson; labelName = lvl + " · Lesson " + (Number(lesson) + 1); }
+      else if (lessonsActive()) { tag = "code_" + lang + "_" + level + "_all"; labelName = lvl + " · All"; }
+      else { tag = "code_" + lang + "_" + level; labelName = lvl; }
+    } else { tag = "english"; labelName = "Words"; }
     const key = BEST_PREFIX + "_" + tag;
     let best = 0;
     try { best = parseInt(localStorage.getItem(key) || "0", 10) || 0; } catch (e) {}
-    if (wpm > best) {
+    if (wpm > best && wpm <= 400) {   // cap guards against a sub-second completion recording an unbeatable best
       try { localStorage.setItem(key, String(wpm)); } catch (e) {}
       resBest.textContent = "🏆 New best — " + labelName + "!";
       resBest.classList.add("new");
@@ -837,16 +885,67 @@ esac` },
       resBest.textContent = "Best (" + labelName + "): " + best + " WPM";
       resBest.classList.remove("new");
     }
-    show(resultPanel); againBtn.focus();
+
+    // Single-lesson runs get Prev / Try Again / Next nav; everything else gets "Race again".
+    const single = lessonsActive() && lesson !== "all";
+    navWrap.classList.toggle("hidden", !single);
+    againBtn.classList.toggle("hidden", single);
+    if (single) {
+      const flat = flatLessons();
+      const ci = flat.findIndex((f) => f.level === level && f.idx === Number(lesson));
+      prevBtn.disabled = (ci <= 0);
+      nextBtn.disabled = (ci < 0 || ci >= flat.length - 1);
+      resultHint.innerHTML = nextBtn.disabled
+        ? 'Last lesson 🎉 &nbsp;·&nbsp; <kbd>Enter</kbd>/<kbd>Esc</kbd> try again'
+        : '<kbd>Enter</kbd> next lesson &nbsp;·&nbsp; <kbd>Esc</kbd> try again';
+    } else {
+      resultHint.innerHTML = 'Press <kbd>Enter</kbd> or <kbd>Esc</kbd> to replay';
+    }
+
+    show(resultPanel);
+    (single ? (nextBtn.disabled ? tryAgainBtn : nextBtn) : againBtn).focus();
+  }
+
+  // Move to the previous/next lesson (crossing level boundaries), then start it.
+  function gotoLesson(dir) {
+    const flat = flatLessons();
+    const ci = flat.findIndex((f) => f.level === level && f.idx === Number(lesson));
+    const ni = ci + dir;
+    if (ni < 0 || ni >= flat.length) return;
+    const t = flat[ni];
+    level = t.level;
+    [...levelsEl.children].forEach((x) => x.classList.toggle("active", x.dataset.level === level));
+    refreshOpts();              // rebuilds the lesson row for the (possibly new) level
+    lesson = String(t.idx);     // select the target lesson after the rebuild
+    [...lessonsEl.children].forEach((x) => x.classList.toggle("active", x.dataset.lesson === lesson));
+    startGame();
   }
 
   // ---------- Controls ----------
   startBtn.addEventListener("click", startGame);
   againBtn.addEventListener("click", startGame);
+  tryAgainBtn.addEventListener("click", startGame);
+  prevBtn.addEventListener("click", () => gotoLesson(-1));
+  nextBtn.addEventListener("click", () => gotoLesson(1));
   conceptBar.addEventListener("click", () => { conceptExplain.classList.toggle("hidden"); });
   gamePanel.addEventListener("click", () => { if (state === "running") capture.focus(); });
+  // Keep the right results button focused even if the user clicks dead space, so the focus ring stays truthful.
+  resultPanel.addEventListener("click", (e) => {
+    if (state === "finished" && !e.target.closest("button")) {
+      const single = lessonsActive() && lesson !== "all";
+      (single ? (nextBtn.disabled ? tryAgainBtn : nextBtn) : againBtn).focus();
+    }
+  });
+  // Drive Enter/Esc on the results screen explicitly so they work regardless of which element holds focus.
   document.addEventListener("keydown", (e) => {
-    if (state === "finished" && (e.key === "Enter" || e.key === "Escape")) { e.preventDefault(); startGame(); }
+    if (state !== "finished") return;
+    if (e.key === "Escape") { e.preventDefault(); startGame(); return; }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const single = lessonsActive() && lesson !== "all";
+      if (single && !nextBtn.disabled) gotoLesson(1);
+      else startGame();
+    }
   });
 })();
 </script>
