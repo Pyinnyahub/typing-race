@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Typing Race — Learn to Code by Typing</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #181b24;
+    --text: #d4d8e2;
+    --dim: #5a6173;
+    --pending: #4a5066;
+    --correct: #5fd98a;
+    --incorrect: #ff6b6b;
+    --accent: #ffb454;
+    --accent-dim: #3a3326;
+    --shadow: rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 20px; -webkit-font-smoothing: antialiased;
+  }
+  .app { width: 100%; max-width: 840px; }
+  h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; text-align: center; margin-bottom: 4px; }
+  h1 .accent { color: var(--accent); }
+  .subtitle { text-align: center; color: var(--dim); font-size: 0.85rem; margin-bottom: 24px; }
+
+  .panel { background: var(--panel); border-radius: 16px; padding: 26px; box-shadow: 0 8px 30px var(--shadow); }
+  .hidden { display: none !important; }
+
+  .label { color: var(--dim); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 9px; text-align: center; }
+  .row { display: flex; gap: 9px; justify-content: center; margin-bottom: 18px; flex-wrap: wrap; }
+  .opt-btn {
+    background: transparent; border: 1.5px solid var(--pending); color: var(--text);
+    padding: 9px 16px; border-radius: 10px; font-family: inherit; font-size: 0.9rem;
+    cursor: pointer; transition: all 0.15s ease;
+  }
+  .opt-btn:hover { border-color: var(--accent); }
+  .opt-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); font-weight: 700; }
+  .btn-primary {
+    display: block; width: 100%; background: var(--accent); color: #1a1505; border: none;
+    padding: 14px; border-radius: 10px; font-family: inherit; font-size: 1.05rem; font-weight: 700;
+    cursor: pointer; transition: transform 0.1s ease, filter 0.15s ease; margin-top: 6px;
+  }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-primary:active { transform: scale(0.98); }
+
+  /* HUD */
+  .hud { display: flex; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
+  .stat { text-align: center; flex: 1; }
+  .stat .val { font-size: 1.7rem; font-weight: 700; color: var(--accent); line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .stat .key { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); margin-top: 2px; }
+
+  /* Concept banner */
+  .concept {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    margin-bottom: 14px; padding: 9px 14px; background: #1f232f;
+    border-left: 3px solid var(--accent); border-radius: 8px;
+    cursor: pointer; user-select: none; transition: background 0.15s ease;
+  }
+  .concept:hover { background: #262b38; }
+  .concept .c-left { display: flex; align-items: baseline; gap: 7px; }
+  .concept .c-name { color: var(--text); font-weight: 700; font-size: 0.95rem; }
+  .concept .c-info { color: var(--accent); font-size: 0.72rem; }
+  .concept .c-meta { color: var(--dim); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+  .explain {
+    margin: -6px 0 14px; padding: 10px 14px; background: #15181f;
+    border: 1px solid var(--pending); border-left: 3px solid var(--accent);
+    border-radius: 8px; color: var(--text); font-size: 0.84rem; line-height: 1.55;
+  }
+
+  /* Stream */
+  .stream {
+    position: relative; font-size: 1.15rem; line-height: 1.95rem;
+    white-space: pre-wrap; word-break: break-word; tab-size: 2;
+    height: 11.7rem; overflow: hidden; color: var(--pending); text-align: left; user-select: none;
+  }
+  .stream.english { font-size: 1.45rem; line-height: 2.1rem; letter-spacing: 0.5px; }
+  .ch.ok { color: var(--correct); }
+  .ch.bad { color: var(--incorrect); background: rgba(255,107,107,0.13); border-radius: 2px; }
+  .ch.badspace { background: rgba(255,107,107,0.32); }
+  .ch.nl { color: var(--dim); }
+  .ch.nl.ok { color: var(--correct); opacity: 0.45; }
+  .ch.caret { border-left: 2px solid var(--accent); margin-left: -2px; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { border-color: transparent; } }
+
+  .capture { position: absolute; opacity: 0; pointer-events: none; left: -9999px; }
+  .shake { animation: shake 0.16s ease; }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+  .hint { text-align: center; color: var(--dim); font-size: 0.78rem; margin-top: 16px; }
+  .hint kbd { background: #232733; border: 1px solid var(--pending); border-radius: 4px; padding: 1px 6px; font-size: 0.72rem; color: var(--text); }
+
+  /* Results */
+  .results { text-align: center; }
+  .big-wpm { font-size: 4rem; font-weight: 800; color: var(--accent); line-height: 1; }
+  .big-wpm small { font-size: 1rem; color: var(--dim); font-weight: 400; display: block; margin-top: 4px; text-transform: uppercase; letter-spacing: 2px; }
+  .res-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 24px 0; }
+  .res-cell { background: #1f232f; border-radius: 10px; padding: 14px 8px; }
+  .res-cell .v { font-size: 1.4rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .res-cell .k { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); margin-top: 4px; }
+  .best { color: var(--accent); font-size: 0.85rem; margin-bottom: 20px; min-height: 1.2em; }
+  .best.new { font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Typing<span class="accent">Race</span> <span style="font-size:1rem;color:var(--dim)">/dev</span></h1>
+  <div class="subtitle">Practice typing and code together — beginner to advanced.</div>
+
+  <!-- START -->
+  <div class="panel" id="startPanel">
+    <div class="label">Mode</div>
+    <div class="row" id="modes">
+      <button class="opt-btn active" data-mode="code">&lt;/&gt; Code</button>
+      <button class="opt-btn" data-mode="english">English words</button>
+    </div>
+
+    <div id="codeOpts">
+      <div class="label">Language</div>
+      <div class="row" id="langs">
+        <button class="opt-btn active" data-lang="python">Python</button>
+        <button class="opt-btn" data-lang="sql">SQL</button>
+        <button class="opt-btn" data-lang="bash">Bash</button>
+        <button class="opt-btn" data-lang="typescript">TypeScript</button>
+        <button class="opt-btn" data-lang="javascript">JavaScript</button>
+        <button class="opt-btn" data-lang="mix">Mix all</button>
+      </div>
+
+      <div class="label">Level</div>
+      <div class="row" id="levels">
+        <button class="opt-btn active" data-level="beginner">Beginner</button>
+        <button class="opt-btn" data-level="intermediate">Intermediate</button>
+        <button class="opt-btn" data-level="advanced">Advanced</button>
+        <button class="opt-btn" data-level="all">All</button>
+      </div>
+    </div>
+
+    <div class="label">Time</div>
+    <div class="row" id="durations">
+      <button class="opt-btn" data-sec="15">15s</button>
+      <button class="opt-btn active" data-sec="30">30s</button>
+      <button class="opt-btn" data-sec="60">60s</button>
+      <button class="opt-btn" data-sec="120">120s</button>
+    </div>
+    <button class="btn-primary" id="startBtn">Start typing</button>
+  </div>
+
+  <!-- GAME -->
+  <div class="panel hidden" id="gamePanel">
+    <div class="hud">
+      <div class="stat"><div class="val" id="hudTime">30</div><div class="key">Time</div></div>
+      <div class="stat"><div class="val" id="hudWpm">0</div><div class="key">WPM</div></div>
+      <div class="stat"><div class="val" id="hudAcc">100%</div><div class="key">Accuracy</div></div>
+      <div class="stat"><div class="val" id="hudChars">0</div><div class="key">Chars</div></div>
+    </div>
+    <div class="concept" id="conceptBar" title="Click for an explanation of this concept">
+      <span class="c-left"><span class="c-name" id="conceptName"></span><span class="c-info">ⓘ explain</span></span>
+      <span class="c-meta" id="conceptMeta"></span>
+    </div>
+    <div class="explain hidden" id="conceptExplain"></div>
+    <div class="stream" id="stream"></div>
+    <input class="capture" id="capture" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    <div class="hint" id="gameHint">Just start typing &nbsp;·&nbsp; <kbd>Enter</kbd> new line &nbsp;·&nbsp; indent auto-skips &nbsp;·&nbsp; <kbd>Esc</kbd> restart</div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="panel hidden results" id="resultPanel">
+    <div class="big-wpm"><span id="resWpm">0</span><small>words per minute</small></div>
+    <div class="best" id="resBest"></div>
+    <div class="res-grid">
+      <div class="res-cell"><div class="v" id="resAcc">0%</div><div class="k">Accuracy</div></div>
+      <div class="res-cell"><div class="v" id="resChars">0</div><div class="k">Characters</div></div>
+      <div class="res-cell"><div class="v" id="resErr">0</div><div class="k">Errors</div></div>
+    </div>
+    <button class="btn-primary" id="againBtn">Race again &nbsp;↵</button>
+    <div class="hint" style="margin-top:14px">Press <kbd>Enter</kbd> or <kbd>Esc</kbd> to replay</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  const WORDS = ("the of to and a in is it you that he was for on are with as i his they be at one have this from or had by " +
+    "word but what some we can out other were all there when up use your how said an each she which do their time if will way " +
+    "function return const let var if else for while loop array object string number value index key map filter reduce class " +
+    "import export default async await fetch then catch error data result type interface state props render event handler " +
+    "build test deploy server client cache query model route param config token user login logout commit branch merge push").split(/\s+/);
+
+  // ---------- Curriculum: language -> level -> [{concept, code}] ----------
+  const CURRICULUM = {
+    javascript: {
+      beginner: [
+        { concept: "Variables & output", code:
+`let name = "Ada";
+console.log("hi " + name);` },
+        { concept: "If / else", code:
+`let age = 18;
+if (age >= 18) {
+  console.log("adult");
+} else {
+  console.log("minor");
+}` },
+        { concept: "For loop", code:
+`for (let i = 1; i <= 5; i++) {
+  console.log(i);
+}` },
+        { concept: "Function", code:
+`function square(n) {
+  return n * n;
+}` }
+      ],
+      intermediate: [
+        { concept: "Array map", code:
+`const nums = [1, 2, 3];
+const doubled = nums.map((n) => n * 2);` },
+        { concept: "filter & reduce", code:
+`const evens = nums.filter((n) => n % 2 === 0);
+const sum = nums.reduce((a, b) => a + b, 0);` },
+        { concept: "Object destructuring", code:
+`const user = { name: "Ada", age: 30 };
+const { name, age } = user;` },
+        { concept: "Ternary", code:
+`const label = age >= 18 ? "adult" : "minor";` }
+      ],
+      advanced: [
+        { concept: "Async / await", code:
+`async function load(id) {
+  const res = await fetch("/api/" + id);
+  if (!res.ok) throw new Error("failed");
+  return res.json();
+}` },
+        { concept: "Closure (debounce)", code:
+`function debounce(fn, ms) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), ms);
+  };
+}` },
+        { concept: "Promise.all", code:
+`Promise.all([a(), b(), c()])
+  .then(([x, y, z]) => render(x, y, z))
+  .catch((err) => console.error(err));` },
+        { concept: "Class", code:
+`class Stack {
+  constructor() {
+    this.items = [];
+  }
+  push(x) {
+    this.items.push(x);
+  }
+}` }
+      ]
+    },
+
+    typescript: {
+      beginner: [
+        { concept: "Typed variables", code:
+`let count: number = 0;
+let active: boolean = true;` },
+        { concept: "Typed function", code:
+`function add(a: number, b: number): number {
+  return a + b;
+}` },
+        { concept: "Typed array", code:
+`const names: string[] = ["a", "b", "c"];
+const first: string = names[0];` }
+      ],
+      intermediate: [
+        { concept: "Interface", code:
+`interface User {
+  id: number;
+  name: string;
+  email?: string;
+}` },
+        { concept: "Union type", code:
+`type Status = "idle" | "loading" | "done";
+let state: Status = "idle";` },
+        { concept: "Default parameter", code:
+`function greet(name: string, greeting = "hi"): string {
+  return greeting + ", " + name;
+}` }
+      ],
+      advanced: [
+        { concept: "Generic function", code:
+`function identity<T>(value: T): T {
+  return value;
+}` },
+        { concept: "Generic class", code:
+`class Box<T> {
+  constructor(private value: T) {}
+  get(): T {
+    return this.value;
+  }
+}` },
+        { concept: "Discriminated union", code:
+`type Result<T> =
+  | { ok: true; value: T }
+  | { ok: false; error: string };` }
+      ]
+    },
+
+    python: {
+      beginner: [
+        { concept: "Variables & print", code:
+`name = "Ada"
+print("hi", name)` },
+        { concept: "If / elif / else", code:
+`n = 7
+if n > 0:
+    print("positive")
+elif n == 0:
+    print("zero")
+else:
+    print("negative")` },
+        { concept: "For loop", code:
+`for i in range(1, 6):
+    print(i)` }
+      ],
+      intermediate: [
+        { concept: "Function & list", code:
+`def squares(n):
+    return [i * i for i in range(n)]` },
+        { concept: "Dictionary count", code:
+`counts = {}
+for word in words:
+    counts[word] = counts.get(word, 0) + 1` },
+        { concept: "While + break", code:
+`i = 0
+while i < 10:
+    if i == 5:
+        break
+    i += 1` }
+      ],
+      advanced: [
+        { concept: "Class", code:
+`class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def dist(self):
+        return (self.x ** 2 + self.y ** 2) ** 0.5` },
+        { concept: "Decorator", code:
+`def retry(times):
+    def wrap(fn):
+        def inner(*args, **kwargs):
+            return fn(*args, **kwargs)
+        return inner
+    return wrap` },
+        { concept: "Nested comprehension", code:
+`pairs = [(x, y) for x in range(3) for y in range(3) if x != y]
+print(len(pairs))` }
+      ]
+    },
+
+    sql: {
+      beginner: [
+        { concept: "Select all", code:
+`SELECT * FROM users;` },
+        { concept: "Where filter", code:
+`SELECT name, email FROM users WHERE active = true;` },
+        { concept: "Order & limit", code:
+`SELECT name FROM users ORDER BY created_at DESC LIMIT 10;` }
+      ],
+      intermediate: [
+        { concept: "Insert", code:
+`INSERT INTO orders (user_id, total) VALUES (1, 99.50);` },
+        { concept: "Update", code:
+`UPDATE products SET price = price * 1.1 WHERE stock > 0;` },
+        { concept: "Join", code:
+`SELECT u.name, o.total
+FROM users u
+JOIN orders o ON o.user_id = u.id;` }
+      ],
+      advanced: [
+        { concept: "Group & having", code:
+`SELECT category, AVG(price)
+FROM products
+GROUP BY category
+HAVING AVG(price) > 50;` },
+        { concept: "Subquery", code:
+`SELECT name FROM users
+WHERE id IN (SELECT user_id FROM orders WHERE total > 100);` },
+        { concept: "Aggregate join", code:
+`SELECT u.name, COUNT(o.id) AS orders
+FROM users u
+JOIN orders o ON o.user_id = u.id
+GROUP BY u.name;` }
+      ]
+    },
+
+    bash: {
+      beginner: [
+        { concept: "Variables & echo", code:
+`name="Ada"
+echo "hi $name"` },
+        { concept: "If test", code:
+`if [ "$age" -ge 18 ]; then
+  echo "adult"
+fi` },
+        { concept: "For loop", code:
+`for i in 1 2 3 4 5; do
+  echo "$i"
+done` }
+      ],
+      intermediate: [
+        { concept: "Function", code:
+`greet() {
+  echo "hello $1"
+}` },
+        { concept: "While read", code:
+`while read line; do
+  echo "$line"
+done < file.txt` },
+        { concept: "File test", code:
+`if [ -f config.txt ]; then
+  echo "found"
+else
+  exit 1
+fi` }
+      ],
+      advanced: [
+        { concept: "Command substitution", code:
+`count=$(ls | wc -l)
+echo "files: $count"` },
+        { concept: "Case statement", code:
+`case "$1" in
+  start) echo "starting" ;;
+  stop) echo "stopping" ;;
+  *) echo "usage" ;;
+esac` },
+        { concept: "Pipe & grep", code:
+`cat log.txt | grep "error" | wc -l` }
+      ]
+    },
+
+  };
+
+  const LANG_NAMES = { python: "Python", sql: "SQL", bash: "Bash", typescript: "TypeScript", javascript: "JavaScript", mix: "Mix" };
+  const LEVEL_NAMES = { beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced", all: "All levels" };
+  const LEVEL_ORDER = ["beginner", "intermediate", "advanced"];
+
+  // Short explanation per concept (shared across languages). Keys are concept names;
+  // use "lang|Concept" for language-specific overrides where a name would otherwise collide.
+  const EXPLAIN = {
+    "If / else": "Runs one block when a condition is true, another when it is false.",
+    "If / elif / else": "Checks several conditions in order, running the first that matches.",
+    "For loop": "Repeats a block a fixed number of times using a counter.",
+    "Function": "A reusable, named block of code that takes inputs and returns a result.",
+    "Class": "A blueprint that bundles data and behavior together into objects.",
+    "Struct": "A custom type that groups related fields together.",
+    "Method": "A function that belongs to a class or object.",
+    "Variables & output": "Store a value in a variable, then print it out.",
+    "Variables & print": "Store a value in a variable, then print it out.",
+    "Variables & echo": "Store a value in a variable, then echo it to output.",
+    "Variables": "Declare variables to hold values such as numbers.",
+    "Generic function": "A function that works with any type, decided by the caller.",
+    "Generic method": "A method that works with any type, decided by the caller.",
+    "Generic class": "A class parameterized by a type so it can hold any kind of value.",
+    "Array map": "Transforms each element of an array into a new array.",
+    "filter & reduce": "filter keeps matching items; reduce folds them into one value.",
+    "Object destructuring": "Pulls properties out of an object into separate variables.",
+    "Ternary": "A one-line if/else expression: condition ? a : b.",
+    "Async / await": "Waits for a Promise to resolve without blocking the program.",
+    "Closure (debounce)": "A function that remembers variables from its outer scope.",
+    "Promise.all": "Waits for several Promises to finish, then continues.",
+    "Typed variables": "Variables annotated with a type the compiler checks.",
+    "Typed function": "A function whose parameters and return value have declared types.",
+    "Typed array": "An array whose element type is fixed and checked.",
+    "Interface": "Describes the shape an object must have.",
+    "Union type": "A value that may be one of several listed types.",
+    "Default parameter": "A parameter that falls back to a default when none is passed.",
+    "Discriminated union": "A union of object types told apart by a shared tag field.",
+    "Function & list": "A function that builds and returns a list with a comprehension.",
+    "Dictionary count": "Uses a dictionary to tally how often each item appears.",
+    "While + break": "Loops until a condition, exiting early with break.",
+    "Decorator": "Wraps a function to add behavior without changing its body.",
+    "Nested comprehension": "Builds a list using two loops inside one expression.",
+    "Program & print": "The program entry point that prints output.",
+    "Program & output": "The program entry point that prints output.",
+    "Slice & range": "Iterates a slice, getting both index and value with range.",
+    "Error handling": "Checks the returned error value and handles failure.",
+    "Goroutine & channel": "Runs work concurrently and passes data through a channel.",
+    "Map iteration": "Loops over a map's key/value pairs.",
+    "Method on struct": "A function attached to a struct through a receiver.",
+    "Vec & iterate": "Creates a growable vector and loops over its references.",
+    "Match": "Pattern-matches a value against several arms.",
+    "Iterator chain": "Chains filter/map/collect to transform a sequence.",
+    "Result & error": "Returns Ok or Err to signal success or failure.",
+    "Select all": "Reads every column and row from a table.",
+    "Where filter": "Returns only the rows that match a condition.",
+    "Order & limit": "Sorts rows and caps how many are returned.",
+    "Insert": "Adds a new row of values into a table.",
+    "Update": "Changes column values in rows that match a condition.",
+    "Join": "Combines rows from two tables on a matching key.",
+    "Group & having": "Groups rows and filters the groups by an aggregate.",
+    "Subquery": "A query nested inside another query.",
+    "Aggregate join": "Joins tables and counts or sums the grouped results.",
+    "Array loop": "Iterates an array with a for-each style loop.",
+    "ArrayList": "A resizable list you can keep adding elements to.",
+    "Stream": "Processes a collection with filter/map/reduce-style steps.",
+    "Vector": "A dynamic array from the standard library.",
+    "Template": "Generic code parameterized by a type.",
+    "Smart pointer": "An owning pointer that frees its memory automatically.",
+    "Array": "A fixed-size block of same-type values.",
+    "Pointer": "A variable that stores the memory address of another value.",
+    "Malloc": "Allocates a block of memory on the heap at runtime.",
+    "Function pointer": "A variable that points to a function so it can be called indirectly.",
+    "csharp|List": "A resizable, strongly-typed collection of items.",
+    "Foreach": "Loops over every item in a collection.",
+    "Class & property": "A class with auto-implemented get/set properties.",
+    "LINQ": "Queries collections with expressions like Where and Select.",
+    "Times loop": "Repeats a block a set number of times with n.times.",
+    "Array each": "Runs a block once for each element of an array.",
+    "Hash": "A key/value collection accessed by symbol or string keys.",
+    "Map & select": "map transforms items; select keeps those that pass a test.",
+    "Block & yield": "Passes a block into a method and runs it with yield.",
+    "Array foreach": "Loops over each element of an array.",
+    "Associative array": "An array indexed by string keys instead of numbers.",
+    "Array filter": "Keeps only the array elements that pass a test.",
+    "If test": "Runs commands when a bracket test condition succeeds.",
+    "While read": "Reads input or a file line by line in a loop.",
+    "File test": "Checks file conditions such as existence with -f.",
+    "Command substitution": "Captures a command's output into a variable.",
+    "Case statement": "Branches on a value matching different patterns.",
+    "Pipe & grep": "Chains commands, filtering the output with grep.",
+    "Elements": "Basic tags like headings and paragraphs that structure content.",
+    "Link & image": "Anchor links and embedded images.",
+    "html|List": "Bulleted or numbered lists built with ul/ol and li.",
+    "Form": "Collects user input with fields and a submit button.",
+    "Div & class": "Groups content in a container styled by its class.",
+    "Table": "Displays data in rows and cells.",
+    "Semantic layout": "Meaningful structure tags such as header and nav.",
+    "Head & meta": "Document metadata like character set and title.",
+    "Data attribute": "Custom data-* attributes that store values on an element.",
+    "Selector & color": "Targets elements and sets their text color and size.",
+    "Class selector": "Styles every element that shares a class.",
+    "Box model": "Controls spacing with margin, border, and padding.",
+    "Flexbox": "Lays items out in a flexible row or column.",
+    "Hover state": "Applies styles while the pointer is over an element.",
+    "Grid": "Arranges items into rows and columns.",
+    "Custom properties": "Reusable CSS variables defined with --name.",
+    "Media query": "Applies styles only at certain screen sizes.",
+    "Transition": "Animates property changes smoothly over time."
+  };
+  function explainFor(seg) {
+    return EXPLAIN[seg.lang + "|" + seg.concept] || EXPLAIN[seg.concept]
+      || "A common programming pattern — type it to build muscle memory.";
+  }
+
+  // ---------- DOM ----------
+  const $ = (id) => document.getElementById(id);
+  const startPanel = $("startPanel"), gamePanel = $("gamePanel"), resultPanel = $("resultPanel");
+  const modesEl = $("modes"), langsEl = $("langs"), levelsEl = $("levels"), codeOpts = $("codeOpts"), durationsEl = $("durations");
+  const startBtn = $("startBtn"), againBtn = $("againBtn");
+  const streamEl = $("stream"), capture = $("capture"), gameHint = $("gameHint");
+  const conceptBar = $("conceptBar"), conceptName = $("conceptName"), conceptMeta = $("conceptMeta"), conceptExplain = $("conceptExplain");
+  const hudTime = $("hudTime"), hudWpm = $("hudWpm"), hudAcc = $("hudAcc"), hudChars = $("hudChars");
+  const resWpm = $("resWpm"), resAcc = $("resAcc"), resChars = $("resChars"), resErr = $("resErr"), resBest = $("resBest");
+
+  // ---------- State ----------
+  let mode = "code", lang = "python", level = "beginner", duration = 30;
+  let state = "idle";
+  let target = "", typed = [], pos = 0;
+  let correctChars = 0, totalKeys = 0;
+  let startTime = 0, timerId = null;
+  let codeQueue = [], segments = [], curSegIdx = -1;
+
+  const BEST_PREFIX = "typingRaceDevBest";
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // ---------- Selectors ----------
+  modesEl.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-mode]"); if (!b) return;
+    [...modesEl.children].forEach((x) => x.classList.remove("active"));
+    b.classList.add("active"); mode = b.dataset.mode;
+    codeOpts.classList.toggle("hidden", mode !== "code");
+  });
+  langsEl.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-lang]"); if (!b) return;
+    [...langsEl.children].forEach((x) => x.classList.remove("active"));
+    b.classList.add("active"); lang = b.dataset.lang;
+  });
+  levelsEl.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-level]"); if (!b) return;
+    [...levelsEl.children].forEach((x) => x.classList.remove("active"));
+    b.classList.add("active"); level = b.dataset.level;
+  });
+  durationsEl.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-sec]"); if (!b) return;
+    [...durationsEl.children].forEach((x) => x.classList.remove("active"));
+    b.classList.add("active"); duration = parseInt(b.dataset.sec, 10);
+  });
+
+  function show(panel) {
+    [startPanel, gamePanel, resultPanel].forEach((p) => p.classList.add("hidden"));
+    panel.classList.remove("hidden");
+  }
+
+  // ---------- Snippet pool ----------
+  function poolSnippets() {
+    const langs = lang === "mix" ? Object.keys(CURRICULUM) : [lang];
+    const levels = level === "all" ? LEVEL_ORDER : [level];
+    const out = [];
+    for (const L of langs) {
+      const langObj = CURRICULUM[L]; if (!langObj) continue;
+      for (const lv of levels) {
+        const arr = langObj[lv] || [];
+        for (const s of arr) out.push({ concept: s.concept, code: s.code, lang: L, level: lv });
+      }
+    }
+    return out;
+  }
+  function nextSnippet() {
+    if (codeQueue.length === 0) codeQueue = shuffle(poolSnippets());
+    return codeQueue.shift();
+  }
+  function pushSnippet(snip) {
+    segments.push({ start: target.length, concept: snip.concept, lang: snip.lang, level: snip.level });
+    target += snip.code;
+  }
+
+  function buildInitialTarget() {
+    target = ""; segments = []; curSegIdx = -1;
+    if (mode === "english") {
+      target = shuffle(WORDS).slice(0, 90).join(" ");
+    } else {
+      codeQueue = shuffle(poolSnippets());
+      pushSnippet(nextSnippet());
+    }
+  }
+  function extend() {
+    if (mode === "english") target += " " + shuffle(WORDS).slice(0, 50).join(" ");
+    else { target += "\n\n"; pushSnippet(nextSnippet()); }
+  }
+  function maybeExtend() { if (pos > target.length - 80) extend(); }
+
+  function updateConcept() {
+    if (mode !== "code") { conceptBar.classList.add("hidden"); conceptExplain.classList.add("hidden"); return; }
+    conceptBar.classList.remove("hidden");
+    let idx = 0;
+    for (let i = 0; i < segments.length; i++) { if (segments[i].start <= pos) idx = i; else break; }
+    if (idx === curSegIdx) return;
+    curSegIdx = idx;
+    const seg = segments[idx];
+    if (seg) {
+      conceptName.textContent = seg.concept;
+      conceptMeta.textContent = LANG_NAMES[seg.lang] + " · " + LEVEL_NAMES[seg.level];
+      conceptExplain.textContent = explainFor(seg);
+    }
+  }
+
+  // ---------- Start ----------
+  function startGame() {
+    state = "running";
+    pos = 0; typed = []; correctChars = 0; totalKeys = 0; startTime = 0;
+    buildInitialTarget();
+    streamEl.className = "stream" + (mode === "english" ? " english" : "");
+    gameHint.innerHTML = mode === "english"
+      ? 'Just start typing &nbsp;·&nbsp; <kbd>space</kbd> next word &nbsp;·&nbsp; <kbd>Esc</kbd> restart'
+      : 'Just start typing &nbsp;·&nbsp; <kbd>Enter</kbd> new line &nbsp;·&nbsp; indent auto-skips &nbsp;·&nbsp; <kbd>Esc</kbd> restart';
+    show(gamePanel);
+    conceptExplain.classList.add("hidden");
+    hudTime.textContent = duration; hudWpm.textContent = "0"; hudAcc.textContent = "100%"; hudChars.textContent = "0";
+    render();
+    capture.value = ""; capture.focus();
+    if (timerId) clearInterval(timerId);
+  }
+
+  function beginTimer() { startTime = performance.now(); timerId = setInterval(tick, 100); }
+  function tick() {
+    const elapsed = (performance.now() - startTime) / 1000;
+    const remaining = Math.max(0, duration - elapsed);
+    hudTime.textContent = Math.ceil(remaining);
+    liveStats(elapsed);
+    if (remaining <= 0) finish();
+  }
+  function liveStats(elapsed) {
+    const mins = elapsed / 60;
+    hudWpm.textContent = mins > 0 ? Math.round((correctChars / 5) / mins) : 0;
+    hudAcc.textContent = (totalKeys > 0 ? Math.round((correctChars / totalKeys) * 100) : 100) + "%";
+    hudChars.textContent = totalKeys;
+  }
+
+  // ---------- Input ----------
+  capture.addEventListener("input", () => { capture.value = ""; });
+  capture.addEventListener("keydown", (e) => {
+    if (state !== "running") return;
+    if (e.key === "Escape") { e.preventDefault(); startGame(); return; }
+    if (startTime === 0 && (e.key.length === 1 || e.key === "Enter")) beginTimer();
+    if (e.key === "Backspace") { e.preventDefault(); backspace(); return; }
+    if (e.key === "Tab") { e.preventDefault(); return; }
+    if (e.key === "Enter") { e.preventDefault(); handleEnter(); return; }
+    if (e.key.length === 1) handleChar(e.key);
+  });
+
+  function handleChar(ch) {
+    if (pos >= target.length) return;
+    const expected = target[pos];
+    if (expected === "\n") { totalKeys++; flashError(); return; }
+    totalKeys++;
+    if (ch === expected) correctChars++; else flashError();
+    typed[pos] = ch; pos++;
+    maybeExtend(); render();
+  }
+  function handleEnter() {
+    const expected = target[pos];
+    if (expected === "\n") {
+      totalKeys++; correctChars++; typed[pos] = "\n"; pos++;
+      while (pos < target.length && (target[pos] === " " || target[pos] === "\t")) { typed[pos] = target[pos]; pos++; }
+      maybeExtend(); render();
+    } else { totalKeys++; flashError(); }
+  }
+  function backspace() {
+    if (pos <= 0) return;
+    pos--;
+    while (pos > 0 && typed[pos] !== undefined && (target[pos] === " " || target[pos] === "\t")
+           && typed[pos] === target[pos] && target[pos - 1] !== undefined) {
+      if (target[pos - 1] === "\n" || target[pos - 1] === " " || target[pos - 1] === "\t") pos--; else break;
+    }
+    typed[pos] = undefined; render();
+  }
+  function flashError() { streamEl.classList.remove("shake"); void streamEl.offsetWidth; streamEl.classList.add("shake"); }
+
+  // ---------- Render ----------
+  function esc(c) { return c === "&" ? "&amp;" : c === "<" ? "&lt;" : c === ">" ? "&gt;" : c; }
+  function render() {
+    let from = Math.max(0, pos - 170);
+    while (from > 0 && target[from - 1] !== "\n") from--;
+    const to = Math.min(target.length, pos + 280);
+    let html = "";
+    for (let i = from; i < to; i++) {
+      const ch = target[i];
+      const isCaret = i === pos;
+      let cls = "ch";
+      if (i < pos) cls += (typed[i] === target[i]) ? " ok" : " bad";
+      const idAttr = isCaret ? ' id="crt"' : "";
+      if (ch === "\n") {
+        if (isCaret) cls += " caret";
+        html += '<span class="' + cls + ' nl"' + idAttr + '>↵</span>\n';
+      } else if (ch === " ") {
+        if (i < pos && typed[i] !== " ") cls += " badspace";
+        if (isCaret) cls += " caret";
+        html += '<span class="' + cls + '"' + idAttr + '> </span>';
+      } else {
+        if (isCaret) cls += " caret";
+        html += '<span class="' + cls + '"' + idAttr + '>' + esc(ch) + '</span>';
+      }
+    }
+    streamEl.innerHTML = html;
+    const cr = $("crt");
+    if (cr) {
+      const top = cr.offsetTop - streamEl.offsetTop;
+      if (top < streamEl.scrollTop + 4 || top > streamEl.scrollTop + streamEl.clientHeight - 32)
+        streamEl.scrollTop = Math.max(0, top - streamEl.clientHeight / 2);
+    }
+    updateConcept();
+  }
+
+  // ---------- Finish ----------
+  function finish() {
+    if (timerId) clearInterval(timerId);
+    state = "finished";
+    const mins = duration / 60;
+    const wpm = Math.round((correctChars / 5) / mins);
+    const acc = totalKeys > 0 ? Math.round((correctChars / totalKeys) * 100) : 100;
+    resWpm.textContent = wpm; resAcc.textContent = acc + "%";
+    resChars.textContent = totalKeys; resErr.textContent = totalKeys - correctChars;
+
+    const tag = mode === "code" ? ("code_" + lang + "_" + level) : "english";
+    const labelName = mode === "code" ? (LANG_NAMES[lang] + " · " + LEVEL_NAMES[level]) : "Words";
+    const key = BEST_PREFIX + "_" + tag;
+    let best = 0;
+    try { best = parseInt(localStorage.getItem(key) || "0", 10) || 0; } catch (e) {}
+    if (wpm > best) {
+      try { localStorage.setItem(key, String(wpm)); } catch (e) {}
+      resBest.textContent = "🏆 New best — " + labelName + "!";
+      resBest.classList.add("new");
+    } else {
+      resBest.textContent = "Best (" + labelName + "): " + best + " WPM";
+      resBest.classList.remove("new");
+    }
+    show(resultPanel); againBtn.focus();
+  }
+
+  // ---------- Controls ----------
+  startBtn.addEventListener("click", startGame);
+  againBtn.addEventListener("click", startGame);
+  conceptBar.addEventListener("click", () => { conceptExplain.classList.toggle("hidden"); });
+  gamePanel.addEventListener("click", () => { if (state === "running") capture.focus(); });
+  document.addEventListener("keydown", (e) => {
+    if (state === "finished" && (e.key === "Enter" || e.key === "Escape")) { e.preventDefault(); startGame(); }
+  });
+})();
+</script>
+</body>
+</html>
