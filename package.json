@@ -1,0 +1,14 @@
+{
+  "name": "typing-race",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TypingRace /dev — single-file typing trainer that teaches coding.",
+  "scripts": {
+    "validate": "node scripts/validate-curriculum.mjs",
+    "test": "playwright test",
+    "ci": "npm run validate && npm test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}
