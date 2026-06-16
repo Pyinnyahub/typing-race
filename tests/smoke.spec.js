@@ -77,3 +77,25 @@ test("Enter/Esc on the menu do not launch a game", async ({ page }) => {
   await expect(page.locator("#menuPanel")).toBeVisible();
   await expect(page.locator("#gamePanel")).toBeHidden();
 });
+
+test("completing a lesson records progress (streak + done mark)", async ({ page }) => {
+  await page.goto(FILE);
+  await page.click("#startBtn");
+  await page.click('#menuList [data-lesson="0"]');
+  await autotype(page);
+  await expect(page.locator("#resultPanel")).toBeVisible();
+  // back to setup via the menu's Languages button
+  await page.click("#menuBtn");
+  await expect(page.locator('#menuList .lesson-item[data-lesson="0"]')).toHaveClass(/done/);
+  await page.click("#menuHome");
+  await expect(page.locator("#setupPanel")).toBeVisible();
+  await expect(page.locator("#streakBadge")).toBeVisible();
+});
+
+test("progress dashboard opens with stats", async ({ page }) => {
+  await page.goto(FILE);
+  await page.click("#progressBtn");
+  await expect(page.locator("#statsPanel")).toBeVisible();
+  await expect(page.locator("#statsBody .stat-card")).toHaveCount(6);
+  await expect(page.locator("#statsBody .pbar-row")).toHaveCount(5); // one per language
+});

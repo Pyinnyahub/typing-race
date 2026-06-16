@@ -85,6 +85,26 @@
   .li-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .li-title { font-weight: 700; font-size: 0.92rem; }
   .li-sub { font-size: 0.76rem; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lesson-item.done .li-num { color: var(--correct); }
+  .lesson-item.done { border-color: rgba(95,217,138,0.25); }
+
+  /* Setup top bar: streak + progress */
+  .setup-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; min-height: 30px; }
+  .streak-badge { background: var(--accent-dim); color: var(--accent); border: 1px solid #5a4a26; border-radius: 999px; padding: 5px 12px; font-size: 0.8rem; font-weight: 700; }
+  .progress-link { margin-left: auto; background: transparent; border: 1.5px solid var(--pending); color: var(--text); border-radius: 10px; padding: 7px 14px; font-family: inherit; font-size: 0.82rem; cursor: pointer; transition: all 0.15s ease; }
+  .progress-link:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Stats dashboard */
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px; }
+  .stat-card { background: #1f232f; border-radius: 10px; padding: 16px 8px; text-align: center; }
+  .stat-card .sc-v { font-size: 1.5rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .stat-card .sc-k { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); margin-top: 4px; }
+  .pbar-wrap { display: flex; flex-direction: column; gap: 9px; margin-bottom: 18px; }
+  .pbar-row { display: flex; align-items: center; gap: 10px; font-size: 0.84rem; }
+  .pbar-label { width: 92px; flex-shrink: 0; }
+  .pbar-track { flex: 1; height: 8px; background: #1f232f; border-radius: 4px; overflow: hidden; }
+  .pbar-fill { display: block; height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.3s ease; }
+  .pbar-val { width: 58px; text-align: right; color: var(--dim); flex-shrink: 0; font-variant-numeric: tabular-nums; }
 
   /* HUD */
   .hud { display: flex; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
@@ -143,6 +163,10 @@
 
   <!-- SETUP -->
   <div class="panel" id="setupPanel">
+    <div class="setup-top">
+      <span class="streak-badge hidden" id="streakBadge"></span>
+      <button class="progress-link" id="progressBtn">📊 My progress</button>
+    </div>
     <div class="label">Mode</div>
     <div class="row" id="modes">
       <button class="opt-btn active" data-mode="code">&lt;/&gt; Code lessons</button>
@@ -174,7 +198,10 @@
   <!-- LESSON MENU -->
   <div class="panel hidden" id="menuPanel">
     <div class="menu-head">
-      <button class="menu-back" id="menuBack">←&nbsp;Back</button>
+      <div style="display:flex; gap:14px; align-items:center">
+        <button class="menu-back" id="menuBack">←&nbsp;Back</button>
+        <button class="menu-back" id="menuHome">⇄&nbsp;Languages</button>
+      </div>
       <div style="text-align:right">
         <div class="menu-title" id="menuTitle">Python</div>
         <div class="menu-count" id="menuCount"></div>
@@ -186,6 +213,16 @@
       <button class="opt-btn" data-level="advanced">Advanced</button>
     </div>
     <div class="menu-list" id="menuList"></div>
+  </div>
+
+  <!-- PROGRESS / STATS -->
+  <div class="panel hidden" id="statsPanel">
+    <div class="menu-head">
+      <button class="menu-back" id="statsBack">←&nbsp;Back</button>
+      <div style="text-align:right"><div class="menu-title">Your progress</div><div class="menu-count">all stored only in your browser</div></div>
+    </div>
+    <div id="statsBody"></div>
+    <button class="btn-ghost" id="resetBtn">Reset my progress</button>
   </div>
 
   <!-- GAME -->
@@ -243,9 +280,10 @@
   const LEVEL_ORDER = ["beginner", "intermediate", "advanced"];
 
   const $ = (id) => document.getElementById(id);
-  const setupPanel = $("setupPanel"), menuPanel = $("menuPanel"), gamePanel = $("gamePanel"), resultPanel = $("resultPanel");
+  const setupPanel = $("setupPanel"), menuPanel = $("menuPanel"), gamePanel = $("gamePanel"), resultPanel = $("resultPanel"), statsPanel = $("statsPanel");
+  const progressBtn = $("progressBtn"), streakBadge = $("streakBadge"), statsBack = $("statsBack"), statsBody = $("statsBody"), resetBtn = $("resetBtn");
   const modesEl = $("modes"), langsEl = $("langs"), langWrap = $("langWrap"), durationsEl = $("durations"), timeWrap = $("timeWrap"), startBtn = $("startBtn");
-  const menuBack = $("menuBack"), menuTitle = $("menuTitle"), menuCount = $("menuCount"), menuLevels = $("menuLevels"), menuList = $("menuList");
+  const menuBack = $("menuBack"), menuHome = $("menuHome"), menuTitle = $("menuTitle"), menuCount = $("menuCount"), menuLevels = $("menuLevels"), menuList = $("menuList");
   const streamEl = $("stream"), capture = $("capture"), gameHint = $("gameHint");
   const conceptBar = $("conceptBar"), conceptName = $("conceptName"), conceptMeta = $("conceptMeta"), conceptExplain = $("conceptExplain");
   const hudTime = $("hudTime"), hudWpm = $("hudWpm"), hudAcc = $("hudAcc"), hudChars = $("hudChars");
@@ -278,6 +316,40 @@
   }
   function escHtml(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
   function lessonsFor(lk, lv) { return (CURRICULUM[lk] && CURRICULUM[lk][lv]) || []; }
+
+  // ---------- Local progress stats (localStorage only; nothing leaves the device) ----------
+  const STATS_KEY = "typingRaceStats_v1";
+  function normalizeStats(s) {
+    s.runs = s.runs || 0; s.chars = s.chars || 0; s.bestWpm = s.bestWpm || 0;
+    s.streak = s.streak || 0; s.longest = s.longest || 0; s.days = s.days || 0; s.lastDay = s.lastDay || "";
+    s.lessons = s.lessons || {};   // "lang|level|idx" -> best WPM for that lesson
+    return s;
+  }
+  function loadStats() { try { return normalizeStats(JSON.parse(storageGet(STATS_KEY) || "{}")); } catch (e) { return normalizeStats({}); } }
+  let stats = loadStats();
+  function saveStats() { storageSet(STATS_KEY, JSON.stringify(stats)); }
+  function dstr(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function recordAttempt(wpm, keys) {
+    stats.runs++; stats.chars += keys;
+    if (wpm <= 400 && wpm > stats.bestWpm) stats.bestWpm = wpm;
+    const today = dstr(new Date());
+    if (stats.lastDay !== today) {
+      const y = new Date(); y.setDate(y.getDate() - 1);
+      stats.streak = (stats.lastDay === dstr(y)) ? stats.streak + 1 : 1;
+      stats.lastDay = today; stats.days++;
+      if (stats.streak > stats.longest) stats.longest = stats.streak;
+    }
+    if (mode === "code" && lang !== "mix") {
+      const arr = lessonsFor(lang, level);
+      const idxs = (lesson === "all") ? arr.map((_, i) => i) : [Number(lesson)];
+      for (const i of idxs) { const k = lang + "|" + level + "|" + i; stats.lessons[k] = Math.max(stats.lessons[k] || 0, wpm <= 400 ? wpm : (stats.lessons[k] || 1)); }
+    }
+    saveStats();
+  }
+  function updateSetupBadge() {
+    if (stats.streak > 0) { streakBadge.textContent = "🔥 " + stats.streak + " day" + (stats.streak > 1 ? "s" : ""); streakBadge.classList.remove("hidden"); }
+    else streakBadge.classList.add("hidden");
+  }
   function lessonsActive() { return mode === "code" && lang !== "mix"; }
 
   // ---------- Setup ----------
@@ -293,15 +365,44 @@
     startBtn.innerHTML = racePath ? "Start race &nbsp;→" : "Choose a lesson &nbsp;→";
   }
   refreshSetup();
+  updateSetupBadge();
 
-  function show(panel) { [setupPanel, menuPanel, gamePanel, resultPanel].forEach((p) => p.classList.add("hidden")); panel.classList.remove("hidden"); }
+  function show(panel) { [setupPanel, menuPanel, gamePanel, resultPanel, statsPanel].forEach((p) => p.classList.add("hidden")); panel.classList.remove("hidden"); if (panel === setupPanel) updateSetupBadge(); }
 
   startBtn.addEventListener("click", () => { if (lessonsActive()) openMenu("setup"); else startGame(); });
+
+  // ---------- Progress dashboard ----------
+  progressBtn.addEventListener("click", () => { renderStats(); show(statsPanel); });
+  statsBack.addEventListener("click", () => show(setupPanel));
+  resetBtn.addEventListener("click", () => {
+    if (!confirm("Reset all your progress and best scores? This can't be undone.")) return;
+    try { Object.keys(localStorage).filter((k) => k.indexOf("typingRace") === 0).forEach((k) => localStorage.removeItem(k)); } catch (e) {}
+    stats = normalizeStats({}); renderStats(); updateSetupBadge();
+  });
+  function renderStats() {
+    const langKeys = Object.keys(LANG_NAMES).filter((k) => k !== "mix");
+    let totalDone = 0, totalLessons = 0, bars = "";
+    for (const lk of langKeys) {
+      let done = 0, tot = 0;
+      for (const lv of LEVEL_ORDER) { const arr = lessonsFor(lk, lv); tot += arr.length; for (let i = 0; i < arr.length; i++) if (stats.lessons[lk + "|" + lv + "|" + i]) done++; }
+      totalDone += done; totalLessons += tot;
+      const pct = tot ? Math.round((done / tot) * 100) : 0;
+      bars += '<div class="pbar-row"><span class="pbar-label">' + LANG_NAMES[lk] + '</span><span class="pbar-track"><span class="pbar-fill" style="width:' + pct + '%"></span></span><span class="pbar-val">' + done + "/" + tot + '</span></div>';
+    }
+    const cards = [
+      ["🔥 " + stats.streak, "Day streak"], [String(stats.longest), "Longest"], [totalDone + "/" + totalLessons, "Lessons done"],
+      [String(stats.bestWpm), "Best WPM"], [String(stats.runs), "Runs"], [String(stats.days), "Days played"],
+    ];
+    statsBody.innerHTML =
+      '<div class="stats-grid">' + cards.map((c) => '<div class="stat-card"><div class="sc-v">' + c[0] + '</div><div class="sc-k">' + c[1] + "</div></div>").join("") + "</div>" +
+      '<div class="pbar-wrap">' + bars + "</div>";
+  }
 
   // ---------- Lesson menu ----------
   let menuReturn = setupPanel;
   function openMenu(from) { menuReturn = (from === "result") ? resultPanel : setupPanel; renderMenu(); show(menuPanel); }
   menuBack.addEventListener("click", () => show(menuReturn));
+  menuHome.addEventListener("click", () => show(setupPanel));
   menuLevels.addEventListener("click", (e) => { const b = e.target.closest("[data-level]"); if (!b) return; sel(menuLevels, b); level = b.dataset.level; renderMenu(); });
   menuList.addEventListener("click", (e) => { const b = e.target.closest("[data-lesson]"); if (!b) return; lesson = b.dataset.lesson; startGame(); });
 
@@ -309,10 +410,13 @@
     menuTitle.textContent = LANG_NAMES[lang];
     [...menuLevels.children].forEach((b) => b.classList.toggle("active", b.dataset.level === level));
     const arr = lessonsFor(lang, level);
-    menuCount.textContent = arr.length + " lessons";
+    let done = 0;
+    for (let i = 0; i < arr.length; i++) if (stats.lessons[lang + "|" + level + "|" + i]) done++;
+    menuCount.textContent = done + " / " + arr.length + " done";
     let html = '<button class="lesson-item all" data-lesson="all"><span class="li-num">▶</span><span class="li-body"><span class="li-title">All · in order</span><span class="li-sub">Type every lesson in this level back to back</span></span></button>';
     arr.forEach((s, i) => {
-      html += '<button class="lesson-item" data-lesson="' + i + '"><span class="li-num">' + (i + 1) + '</span><span class="li-body"><span class="li-title">' + escHtml(s.title) + '</span><span class="li-sub">' + escHtml(s.explain) + '</span></span></button>';
+      const completed = !!stats.lessons[lang + "|" + level + "|" + i];
+      html += '<button class="lesson-item' + (completed ? " done" : "") + '" data-lesson="' + i + '"><span class="li-num">' + (completed ? "✓" : (i + 1)) + '</span><span class="li-body"><span class="li-title">' + escHtml(s.title) + '</span><span class="li-sub">' + escHtml(s.explain) + '</span></span></button>';
     });
     menuList.innerHTML = html;
     menuList.scrollTop = 0;
@@ -480,6 +584,8 @@
       storageSet(key, String(wpm));
       resBest.textContent = "🏆 New best — " + labelName + "!"; resBest.classList.add("new");
     } else { resBest.textContent = "Best (" + labelName + "): " + best + " WPM"; resBest.classList.remove("new"); }
+
+    recordAttempt(wpm, totalKeys);
 
     const lessonsMode = lessonsActive();
     const single = lessonsMode && lesson !== "all";
