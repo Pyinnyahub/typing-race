@@ -140,6 +140,11 @@
         <button class="opt-btn" data-level="advanced">Advanced</button>
         <button class="opt-btn" data-level="all">All</button>
       </div>
+
+      <div id="lessonWrap">
+        <div class="label">Lesson</div>
+        <div class="row" id="lessons"></div>
+      </div>
     </div>
 
     <div class="label">Time</div>
@@ -560,7 +565,7 @@ esac` },
   // ---------- DOM ----------
   const $ = (id) => document.getElementById(id);
   const startPanel = $("startPanel"), gamePanel = $("gamePanel"), resultPanel = $("resultPanel");
-  const modesEl = $("modes"), langsEl = $("langs"), levelsEl = $("levels"), codeOpts = $("codeOpts"), durationsEl = $("durations");
+  const modesEl = $("modes"), langsEl = $("langs"), levelsEl = $("levels"), lessonsEl = $("lessons"), lessonWrap = $("lessonWrap"), codeOpts = $("codeOpts"), durationsEl = $("durations");
   const startBtn = $("startBtn"), againBtn = $("againBtn");
   const streamEl = $("stream"), capture = $("capture"), gameHint = $("gameHint");
   const conceptBar = $("conceptBar"), conceptName = $("conceptName"), conceptMeta = $("conceptMeta"), conceptExplain = $("conceptExplain");
@@ -574,6 +579,7 @@ esac` },
   let correctChars = 0, totalKeys = 0;
   let startTime = 0, timerId = null;
   let codeQueue = [], segments = [], curSegIdx = -1;
+  let lesson = "all", feedSnippets = [], orderMode = false;
 
   const BEST_PREFIX = "typingRaceDevBest";
 
@@ -592,22 +598,46 @@ esac` },
     [...modesEl.children].forEach((x) => x.classList.remove("active"));
     b.classList.add("active"); mode = b.dataset.mode;
     codeOpts.classList.toggle("hidden", mode !== "code");
+    rebuildLessons();
   });
   langsEl.addEventListener("click", (e) => {
     const b = e.target.closest("[data-lang]"); if (!b) return;
     [...langsEl.children].forEach((x) => x.classList.remove("active"));
     b.classList.add("active"); lang = b.dataset.lang;
+    rebuildLessons();
   });
   levelsEl.addEventListener("click", (e) => {
     const b = e.target.closest("[data-level]"); if (!b) return;
     [...levelsEl.children].forEach((x) => x.classList.remove("active"));
     b.classList.add("active"); level = b.dataset.level;
+    rebuildLessons();
+  });
+  lessonsEl.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-lesson]"); if (!b) return;
+    [...lessonsEl.children].forEach((x) => x.classList.remove("active"));
+    b.classList.add("active"); lesson = b.dataset.lesson;
   });
   durationsEl.addEventListener("click", (e) => {
     const b = e.target.closest("[data-sec]"); if (!b) return;
     [...durationsEl.children].forEach((x) => x.classList.remove("active"));
     b.classList.add("active"); duration = parseInt(b.dataset.sec, 10);
   });
+
+  function escapeHtml(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function lessonsActive() { return mode === "code" && lang !== "mix" && level !== "all"; }
+  function rebuildLessons() {
+    const showIt = lessonsActive();
+    lessonWrap.classList.toggle("hidden", !showIt);
+    if (!showIt) { lesson = "all"; lessonsEl.innerHTML = ""; return; }
+    const arr = (CURRICULUM[lang] && CURRICULUM[lang][level]) || [];
+    let html = '<button class="opt-btn active" data-lesson="all">All · in order</button>';
+    arr.forEach((s, i) => {
+      html += '<button class="opt-btn" data-lesson="' + i + '">' + (i + 1) + '. ' + escapeHtml(s.concept) + '</button>';
+    });
+    lessonsEl.innerHTML = html;
+    lesson = "all";
+  }
+  rebuildLessons();
 
   function show(panel) {
     [startPanel, gamePanel, resultPanel].forEach((p) => p.classList.add("hidden"));
@@ -628,21 +658,31 @@ esac` },
     }
     return out;
   }
+  function feedFor() {
+    if (lessonsActive()) {
+      const arr = (CURRICULUM[lang] && CURRICULUM[lang][level]) || [];
+      const mapped = arr.map((s, i) => ({ concept: s.concept, code: s.code, lang: lang, level: level, lessonNo: i + 1 }));
+      if (lesson === "all") return { items: mapped, ordered: true };
+      return { items: [mapped[Number(lesson)]], ordered: true };
+    }
+    return { items: poolSnippets(), ordered: false };
+  }
   function nextSnippet() {
-    if (codeQueue.length === 0) codeQueue = shuffle(poolSnippets());
+    if (codeQueue.length === 0) codeQueue = orderMode ? feedSnippets.slice() : shuffle(feedSnippets);
     return codeQueue.shift();
   }
   function pushSnippet(snip) {
-    segments.push({ start: target.length, concept: snip.concept, lang: snip.lang, level: snip.level });
+    segments.push({ start: target.length, concept: snip.concept, lang: snip.lang, level: snip.level, lessonNo: snip.lessonNo });
     target += snip.code;
   }
 
   function buildInitialTarget() {
-    target = ""; segments = []; curSegIdx = -1;
+    target = ""; segments = []; curSegIdx = -1; codeQueue = [];
     if (mode === "english") {
       target = shuffle(WORDS).slice(0, 90).join(" ");
     } else {
-      codeQueue = shuffle(poolSnippets());
+      const feed = feedFor();
+      feedSnippets = feed.items; orderMode = feed.ordered;
       pushSnippet(nextSnippet());
     }
   }
@@ -661,7 +701,7 @@ esac` },
     curSegIdx = idx;
     const seg = segments[idx];
     if (seg) {
-      conceptName.textContent = seg.concept;
+      conceptName.textContent = (seg.lessonNo ? ("Lesson " + seg.lessonNo + " · ") : "") + seg.concept;
       conceptMeta.textContent = LANG_NAMES[seg.lang] + " · " + LEVEL_NAMES[seg.level];
       conceptExplain.textContent = explainFor(seg);
     }
