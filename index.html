@@ -25,6 +25,14 @@
 
   .panel { background: var(--panel); border-radius: 16px; padding: 26px; box-shadow: 0 8px 30px var(--shadow); }
   .hidden { display: none !important; }
+  .warn-banner {
+    position: fixed; left: 50%; bottom: 18px; transform: translate(-50%, 24px);
+    max-width: 92vw; background: #2a2118; border: 1px solid var(--accent); color: var(--text);
+    padding: 11px 16px; border-radius: 10px; font-size: 0.82rem; line-height: 1.4; cursor: pointer;
+    box-shadow: 0 8px 30px var(--shadow); opacity: 0; transition: all 0.25s ease; z-index: 50;
+  }
+  .warn-banner.show { transform: translate(-50%, 0); opacity: 1; }
+  .warn-banner .wb-x { color: var(--accent); font-weight: 700; margin-left: 8px; }
 
   .label { color: var(--dim); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 9px; text-align: center; }
   .row { display: flex; gap: 9px; justify-content: center; margin-bottom: 18px; flex-wrap: wrap; }
@@ -252,6 +260,22 @@
   const BEST_PREFIX = "typingRaceDevBest";
 
   function shuffle(arr) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+  // Safe storage: falls back to in-memory and warns the user once if the browser
+  // can't persist (private mode, quota full, storage disabled) instead of failing silently.
+  const memStore = {};
+  let storageWarned = false;
+  function storageGet(k) { try { return localStorage.getItem(k); } catch (e) { return (k in memStore) ? memStore[k] : null; } }
+  function storageSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { memStore[k] = v; warnNoPersist(); } }
+  function warnNoPersist() {
+    if (storageWarned) return; storageWarned = true;
+    const b = document.createElement("div");
+    b.className = "warn-banner";
+    b.innerHTML = "⚠ Your browser isn't saving scores (private mode or storage is full) — progress this session won't be remembered. <span class='wb-x'>✕</span>";
+    b.addEventListener("click", () => b.remove());
+    document.body.appendChild(b);
+    requestAnimationFrame(() => b.classList.add("show"));
+  }
   function escHtml(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
   function lessonsFor(lk, lv) { return (CURRICULUM[lk] && CURRICULUM[lk][lv]) || []; }
   function lessonsActive() { return mode === "code" && lang !== "mix"; }
@@ -451,9 +475,9 @@
     } else if (mode === "code") { tag = "code_mix_" + duration; labelName = "Mix · " + duration + "s"; }
     else { tag = "english_" + duration; labelName = "Words · " + duration + "s"; }
     const key = BEST_PREFIX + "_" + tag;
-    let best = 0; try { best = parseInt(localStorage.getItem(key) || "0", 10) || 0; } catch (e) {}
+    let best = parseInt(storageGet(key) || "0", 10) || 0;
     if (wpm > best && wpm <= 400) {
-      try { localStorage.setItem(key, String(wpm)); } catch (e) {}
+      storageSet(key, String(wpm));
       resBest.textContent = "🏆 New best — " + labelName + "!"; resBest.classList.add("new");
     } else { resBest.textContent = "Best (" + labelName + "): " + best + " WPM"; resBest.classList.remove("new"); }
 
