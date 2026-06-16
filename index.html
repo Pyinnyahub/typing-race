@@ -89,7 +89,7 @@
   .stream {
     position: relative; font-size: 1.15rem; line-height: 1.95rem;
     white-space: pre-wrap; word-break: break-word; tab-size: 2;
-    height: 11.7rem; overflow: hidden; color: var(--pending); text-align: left; user-select: none;
+    height: 14.3rem; overflow: hidden; color: var(--pending); text-align: left; user-select: none;
   }
   .stream.english { font-size: 1.45rem; line-height: 2.1rem; letter-spacing: 0.5px; }
   .ch.ok { color: var(--correct); }
@@ -850,9 +850,14 @@ esac` },
     streamEl.innerHTML = html;
     const cr = $("crt");
     if (cr) {
-      const top = cr.offsetTop - streamEl.offsetTop;
-      if (top < streamEl.scrollTop + 4 || top > streamEl.scrollTop + streamEl.clientHeight - 32)
-        streamEl.scrollTop = Math.max(0, top - streamEl.clientHeight / 2);
+      // cr.offsetTop is relative to streamEl (its position:relative offsetParent) — keep the caret line in view.
+      const caretTop = cr.offsetTop;
+      const caretBottom = caretTop + (cr.offsetHeight || 28);
+      if (caretTop < streamEl.scrollTop + 4) {
+        streamEl.scrollTop = Math.max(0, caretTop - 8);
+      } else if (caretBottom > streamEl.scrollTop + streamEl.clientHeight - 4) {
+        streamEl.scrollTop = caretBottom - streamEl.clientHeight + 8;
+      }
     }
     updateConcept();
   }
