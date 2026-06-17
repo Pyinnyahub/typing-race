@@ -10,7 +10,7 @@ async function autotype(page) {
   return page.evaluate(async () => {
     const cap = document.getElementById("capture");
     const press = (k) => cap.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true }));
-    for (let i = 0; i < 2000; i++) {
+    for (let i = 0; i < 20000; i++) {
       const c = document.getElementById("crt");
       if (!c) break;
       const ch = c.textContent;
@@ -327,6 +327,82 @@ test("own-code result says 'Practice again', not 'Race again'", async ({ page })
   await page.click("#customStart");
   await autotype(page);
   await expect(page.locator("#againBtn")).toContainText("Practice again");
+});
+
+test("backspace + retype does not inflate accuracy / characters / errors", async ({ page }) => {
+  await page.goto(FILE);
+  await page.click('#modes [data-mode="custom"]');
+  await page.click("#startBtn");
+  await page.fill("#customCode", "ab");
+  await page.click("#customStart");
+  await page.evaluate(() => {
+    const cap = document.getElementById("capture");
+    const k = (key) => cap.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+    k("a");
+    for (let i = 0; i < 10; i++) { k("Backspace"); k("a"); } // fumble loop, net zero
+    k("b"); // finish
+  });
+  await expect(page.locator("#resultPanel")).toBeVisible();
+  await expect(page.locator("#resChars")).toHaveText("2"); // 2 committed chars, not 12+
+  await expect(page.locator("#resAcc")).toHaveText("100%");
+  await expect(page.locator("#resErr")).toHaveText("0");
+});
+
+test("Enter + Backspace does not re-credit the newline", async ({ page }) => {
+  await page.goto(FILE);
+  await page.click('#modes [data-mode="custom"]');
+  await page.click("#startBtn");
+  await page.fill("#customCode", "a\nb");
+  await page.click("#customStart");
+  await page.evaluate(() => {
+    const cap = document.getElementById("capture");
+    const k = (key) => cap.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+    k("a");
+    for (let i = 0; i < 8; i++) { k("Enter"); k("Backspace"); } // toggle the newline
+    k("Enter"); k("b"); // finish
+  });
+  await expect(page.locator("#resultPanel")).toBeVisible();
+  await expect(page.locator("#resChars")).toHaveText("3"); // a, newline, b
+  await expect(page.locator("#resAcc")).toHaveText("100%");
+});
+
+test("an 'All in order' run does not reset existing SRS boxes", async ({ page }) => {
+  await seedStats(page, { srs: {
+    "python|beginner|0": { box: 5, interval: 32, due: "2030-01-01", acc: 99 },
+    "python|beginner|1": { box: 3, interval: 8, due: "2030-01-01", acc: 98 },
+  } });
+  await page.click("#startBtn");
+  await page.click('#menuList [data-lesson="all"]');
+  await autotype(page);
+  await expect(page.locator("#resultPanel")).toBeVisible();
+  const srs = await page.evaluate(() => JSON.parse(localStorage.getItem("typingRaceStats_v1")).srs);
+  expect(srs["python|beginner|0"].box).toBe(5); // unchanged by the aggregate-accuracy all-run
+  expect(srs["python|beginner|1"].box).toBe(3);
+});
+
+test("custom paste with an emoji is stripped and still completes", async ({ page }) => {
+  await page.goto(FILE);
+  await page.click('#modes [data-mode="custom"]');
+  await page.click("#startBtn");
+  await page.fill("#customCode", "a\u{1F600}b"); // a😀b
+  await page.click("#customStart");
+  await autotype(page);
+  await expect(page.locator("#resultPanel")).toBeVisible();
+  await expect(page.locator("#resChars")).toHaveText("2"); // emoji removed -> only "ab"
+});
+
+test("playground prints undefined / NaN / Infinity correctly", async ({ page }) => {
+  await page.goto(FILE);
+  await page.click('#modes [data-mode="custom"]');
+  await page.click("#startBtn");
+  await page.click('#customLangs [data-clang="javascript"]');
+  await page.fill("#customCode", "x");
+  await page.click("#customStart");
+  await autotype(page);
+  await page.click("#editRunBtn");
+  await page.fill("#playCode", "console.log(undefined, NaN, Infinity)");
+  await page.click("#runBtn");
+  await expect(page.locator("#playOut")).toHaveText("undefined NaN Infinity");
 });
 
 test("Next button label resets after a review session", async ({ page }) => {
