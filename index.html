@@ -94,8 +94,10 @@
   /* Setup top bar: streak + progress */
   .setup-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; min-height: 30px; }
   .streak-badge { background: var(--accent-dim); color: var(--accent); border: 1px solid #5a4a26; border-radius: 999px; padding: 5px 12px; font-size: 0.8rem; font-weight: 700; }
-  .progress-link { margin-left: auto; background: transparent; border: 1.5px solid var(--pending); color: var(--text); border-radius: 10px; padding: 7px 14px; font-family: inherit; font-size: 0.82rem; cursor: pointer; transition: all 0.15s ease; }
+  .setup-actions { margin-left: auto; display: flex; gap: 10px; }
+  .progress-link { background: transparent; border: 1.5px solid var(--pending); color: var(--text); border-radius: 10px; padding: 7px 14px; font-family: inherit; font-size: 0.82rem; cursor: pointer; transition: all 0.15s ease; }
   .progress-link:hover { border-color: var(--accent); color: var(--accent); }
+  .progress-link.review-due { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); font-weight: 700; }
 
   /* Stats dashboard */
   .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px; }
@@ -179,7 +181,10 @@
   <div class="panel" id="setupPanel">
     <div class="setup-top">
       <span class="streak-badge hidden" id="streakBadge"></span>
-      <button class="progress-link" id="progressBtn">📊 My progress</button>
+      <div class="setup-actions">
+        <button class="progress-link review-due hidden" id="reviewBtn">🔁 Review</button>
+        <button class="progress-link" id="progressBtn">📊 My progress</button>
+      </div>
     </div>
     <div class="label">Mode</div>
     <div class="row" id="modes">
@@ -314,7 +319,7 @@
 
   const $ = (id) => document.getElementById(id);
   const setupPanel = $("setupPanel"), menuPanel = $("menuPanel"), gamePanel = $("gamePanel"), resultPanel = $("resultPanel"), statsPanel = $("statsPanel");
-  const progressBtn = $("progressBtn"), streakBadge = $("streakBadge"), statsBack = $("statsBack"), statsBody = $("statsBody"), resetBtn = $("resetBtn");
+  const progressBtn = $("progressBtn"), streakBadge = $("streakBadge"), statsBack = $("statsBack"), statsBody = $("statsBody"), resetBtn = $("resetBtn"), reviewBtn = $("reviewBtn");
   const modesEl = $("modes"), langsEl = $("langs"), langWrap = $("langWrap"), durationsEl = $("durations"), timeWrap = $("timeWrap"), startBtn = $("startBtn");
   const menuBack = $("menuBack"), menuHome = $("menuHome"), menuTitle = $("menuTitle"), menuCount = $("menuCount"), menuLevels = $("menuLevels"), menuList = $("menuList");
   const streamEl = $("stream"), capture = $("capture"), gameHint = $("gameHint");
@@ -357,13 +362,28 @@
     s.runs = s.runs || 0; s.chars = s.chars || 0; s.bestWpm = s.bestWpm || 0;
     s.streak = s.streak || 0; s.longest = s.longest || 0; s.days = s.days || 0; s.lastDay = s.lastDay || "";
     s.lessons = s.lessons || {};   // "lang|level|idx" -> best WPM for that lesson
+    s.srs = s.srs || {};           // "lang|level|idx" -> { box, due, interval, acc } spaced-repetition card
     return s;
+  }
+  // Leitner spaced repetition: a correct pass pushes the card to a longer interval; a poor pass resets it.
+  const SRS_INTERVALS = [1, 2, 4, 8, 16, 32]; // days, indexed by box
+  function srsGrade(key, acc) {
+    const c = stats.srs[key] || { box: 0 };
+    if (acc < 90) c.box = 0;                                  // again — see it tomorrow
+    else if (acc >= 97) c.box = Math.min((c.box || 0) + 1, SRS_INTERVALS.length - 1); // good — wait longer
+    // 90–96%: keep the same box
+    c.interval = SRS_INTERVALS[c.box || 0];
+    const d = new Date(); d.setDate(d.getDate() + c.interval);
+    c.due = dstr(d); c.acc = acc;
+    stats.srs[key] = c;
+    return c.interval;
   }
   function loadStats() { try { return normalizeStats(JSON.parse(storageGet(STATS_KEY) || "{}")); } catch (e) { return normalizeStats({}); } }
   let stats = loadStats();
   function saveStats() { storageSet(STATS_KEY, JSON.stringify(stats)); }
   function dstr(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
-  function recordAttempt(wpm, keys) {
+  let lastInterval = 0;
+  function recordAttempt(wpm, keys, acc) {
     stats.runs++; stats.chars += keys;
     if (wpm <= 400 && wpm > stats.bestWpm) stats.bestWpm = wpm;
     const today = dstr(new Date());
@@ -376,13 +396,28 @@
     if (mode === "code" && lang !== "mix") {
       const arr = lessonsFor(lang, level);
       const idxs = (lesson === "all") ? arr.map((_, i) => i) : [Number(lesson)];
-      for (const i of idxs) { const k = lang + "|" + level + "|" + i; stats.lessons[k] = Math.max(stats.lessons[k] || 0, wpm <= 400 ? wpm : (stats.lessons[k] || 1)); }
+      for (const i of idxs) {
+        const k = lang + "|" + level + "|" + i;
+        stats.lessons[k] = Math.max(stats.lessons[k] || 0, wpm <= 400 ? wpm : (stats.lessons[k] || 1));
+        lastInterval = srsGrade(k, acc);
+      }
     }
     saveStats();
+  }
+  function dueCards() {
+    const today = dstr(new Date());
+    return Object.keys(stats.srs)
+      .filter((k) => (stats.srs[k].due || "9999") <= today)
+      .map((k) => { const p = k.split("|"); return { key: k, lang: p[0], level: p[1], idx: Number(p[2]) }; })
+      .filter((c) => lessonsFor(c.lang, c.level)[c.idx])
+      .sort((a, b) => (stats.srs[a.key].due || "").localeCompare(stats.srs[b.key].due || ""));
   }
   function updateSetupBadge() {
     if (stats.streak > 0) { streakBadge.textContent = "🔥 " + stats.streak + " day" + (stats.streak > 1 ? "s" : ""); streakBadge.classList.remove("hidden"); }
     else streakBadge.classList.add("hidden");
+    const n = dueCards().length;
+    if (n > 0) { reviewBtn.textContent = "🔁 Review (" + n + ")"; reviewBtn.classList.remove("hidden"); }
+    else reviewBtn.classList.add("hidden");
   }
   function lessonsActive() { return mode === "code" && lang !== "mix"; }
 
@@ -619,7 +654,7 @@
       resBest.textContent = "🏆 New best — " + labelName + "!"; resBest.classList.add("new");
     } else { resBest.textContent = "Best (" + labelName + "): " + best + " WPM"; resBest.classList.remove("new"); }
 
-    recordAttempt(wpm, totalKeys);
+    recordAttempt(wpm, totalKeys, acc);
 
     const lessonsMode = lessonsActive();
     const single = lessonsMode && lesson !== "all";
@@ -644,6 +679,14 @@
     } else {
       resultHint.innerHTML = 'Press <kbd>Enter</kbd> or <kbd>Esc</kbd> to replay';
     }
+    if (inReview) {
+      resBest.textContent = lastInterval >= 1 ? "✓ Next review in " + lastInterval + " day" + (lastInterval > 1 ? "s" : "") : "↻ Review again tomorrow";
+      resBest.classList.toggle("new", acc >= 97);
+      navWrap.classList.remove("hidden"); againBtn.classList.add("hidden"); menuBtn.classList.add("hidden");
+      prevBtn.disabled = true; nextBtn.disabled = false;
+      nextBtn.innerHTML = (reviewPos < reviewQueue.length - 1) ? "Next &nbsp;→" : "✓ Finish review";
+      resultHint.innerHTML = "Review " + (reviewPos + 1) + " / " + reviewQueue.length + " &nbsp;·&nbsp; <kbd>Enter</kbd> next &nbsp;·&nbsp; <kbd>Esc</kbd> retry";
+    }
     show(resultPanel);
     (single ? (nextBtn.disabled ? tryAgainBtn : nextBtn) : againBtn).focus();
   }
@@ -658,15 +701,34 @@
     startGame();
   }
 
+  // ---------- Spaced-repetition review session ----------
+  let reviewQueue = [], reviewPos = 0, inReview = false;
+  function startReview() {
+    reviewQueue = dueCards(); reviewPos = 0;
+    if (!reviewQueue.length) return;
+    inReview = true; playReviewItem();
+  }
+  function playReviewItem() {
+    const it = reviewQueue[reviewPos];
+    mode = "code"; lang = it.lang; level = it.level; lesson = String(it.idx);
+    startGame();
+  }
+  function reviewNext() {
+    reviewPos++;
+    if (reviewPos < reviewQueue.length) playReviewItem();
+    else { inReview = false; show(setupPanel); }
+  }
+
   // ---------- Controls ----------
   againBtn.addEventListener("click", startGame);
   tryAgainBtn.addEventListener("click", startGame);
-  prevBtn.addEventListener("click", () => gotoLesson(-1));
-  nextBtn.addEventListener("click", () => gotoLesson(1));
+  prevBtn.addEventListener("click", () => { if (!inReview) gotoLesson(-1); });
+  nextBtn.addEventListener("click", () => { if (inReview) reviewNext(); else gotoLesson(1); });
   menuBtn.addEventListener("click", () => openMenu("result"));
   homeBtn.addEventListener("click", goHome);
   homeLink.addEventListener("click", goHome);
-  function goHome() { if (timerId) clearInterval(timerId); state = "idle"; show(setupPanel); }
+  reviewBtn.addEventListener("click", startReview);
+  function goHome() { if (timerId) clearInterval(timerId); state = "idle"; inReview = false; show(setupPanel); }
 
   // ---------- Playground: edit & run the code in the browser ----------
   const SQL_FIXTURE =
@@ -799,6 +861,7 @@
     if (e.key === "Escape") { e.preventDefault(); startGame(); return; }
     if (e.key === "Enter") {
       e.preventDefault();
+      if (inReview) { reviewNext(); return; }
       const single = lessonsActive() && lesson !== "all";
       if (single && !nextBtn.disabled) gotoLesson(1); else startGame();
     }

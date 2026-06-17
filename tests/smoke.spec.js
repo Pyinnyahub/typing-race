@@ -150,6 +150,31 @@ test("Edit & run is hidden for Bash (no in-browser runtime)", async ({ page }) =
   await expect(page.locator("#editRunBtn")).toBeHidden();
 });
 
+test("spaced repetition: completion schedules a card and review session runs", async ({ page }) => {
+  await page.goto(FILE);
+  await page.click("#startBtn");
+  await page.click('#menuList [data-lesson="0"]');
+  await autotype(page);
+  const card = await page.evaluate(() => JSON.parse(localStorage.getItem("typingRaceStats_v1")).srs["python|beginner|0"]);
+  expect(card).toBeTruthy();
+  expect(card.box).toBeGreaterThanOrEqual(1); // a clean pass advances the box
+  // make a card overdue, reload, run the review session
+  await page.evaluate(() => {
+    const s = JSON.parse(localStorage.getItem("typingRaceStats_v1"));
+    s.srs["python|beginner|1"] = { box: 0, interval: 1, due: "2000-01-01", acc: 80 };
+    localStorage.setItem("typingRaceStats_v1", JSON.stringify(s));
+  });
+  await page.reload();
+  await expect(page.locator("#reviewBtn")).toBeVisible();
+  await expect(page.locator("#reviewBtn")).toContainText("Review (");
+  await page.click("#reviewBtn");
+  await expect(page.locator("#gamePanel")).toBeVisible();
+  await autotype(page);
+  await expect(page.locator("#resultHint")).toContainText("Review 1 /");
+  await page.click("#nextBtn"); // only one due -> finishes -> setup
+  await expect(page.locator("#setupPanel")).toBeVisible();
+});
+
 test("Home button returns to setup from results", async ({ page }) => {
   await page.goto(FILE);
   await page.click("#startBtn");
