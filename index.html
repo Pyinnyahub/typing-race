@@ -159,6 +159,14 @@
   .out-box { background: #0c0e13; border: 1px solid var(--pending); border-radius: 10px; padding: 10px 14px; margin: 0 0 16px; text-align: left; }
   .out-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); margin-bottom: 5px; }
   .out-pre { font-family: inherit; font-size: 0.92rem; line-height: 1.5; color: var(--correct); white-space: pre-wrap; word-break: break-word; margin: 0; }
+  .out-pre.err { color: var(--incorrect); }
+  .play-code { width: 100%; min-height: 168px; background: #0c0e13; color: var(--text); border: 1px solid var(--pending); border-radius: 10px; padding: 12px 14px; font-family: inherit; font-size: 1rem; line-height: 1.6; resize: vertical; white-space: pre; overflow: auto; tab-size: 4; }
+  .play-code:focus { outline: none; border-color: var(--accent); }
+  .play-bar { display: flex; gap: 10px; margin: 12px 0; }
+  .play-bar .btn-ghost, .play-bar .btn-primary { margin-top: 0; }
+  .play-bar .btn-ghost { width: auto; flex: 0 0 auto; padding: 12px 18px; }
+  .play-bar .btn-primary { flex: 1; }
+  #playPanel .out-pre { color: var(--text); }
   .best.new { font-weight: 700; }
 </style>
 </head>
@@ -231,6 +239,20 @@
     <button class="btn-ghost" id="resetBtn">Reset my progress</button>
   </div>
 
+  <!-- PLAYGROUND -->
+  <div class="panel hidden" id="playPanel">
+    <div class="menu-head">
+      <button class="menu-back" id="playBack">←&nbsp;Back</button>
+      <div style="text-align:right"><div class="menu-title">Playground</div><div class="menu-count" id="playLang"></div></div>
+    </div>
+    <textarea class="play-code" id="playCode" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+    <div class="play-bar">
+      <button class="btn-ghost" id="resetCodeBtn">↺&nbsp;Reset</button>
+      <button class="btn-primary" id="runBtn">▶&nbsp;Run</button>
+    </div>
+    <div class="out-box hidden" id="playOutBox"><div class="out-label">▸ Output</div><pre class="out-pre" id="playOut"></pre></div>
+  </div>
+
   <!-- GAME -->
   <div class="panel hidden" id="gamePanel">
     <div class="hud">
@@ -259,6 +281,7 @@
       <div class="res-cell"><div class="v" id="resErr">0</div><div class="k">Errors</div></div>
     </div>
     <div class="out-box hidden" id="outBox"><div class="out-label">▸ Output</div><pre class="out-pre" id="outPre"></pre></div>
+    <button class="btn-ghost hidden" id="editRunBtn">✎&nbsp;Edit &amp; run this code</button>
     <button class="btn-primary" id="againBtn">Race again &nbsp;↵</button>
     <div class="nav-row hidden" id="navWrap">
       <button class="btn-sec" id="prevBtn">←&nbsp;Previous</button>
@@ -299,6 +322,7 @@
   const hudTime = $("hudTime"), hudWpm = $("hudWpm"), hudAcc = $("hudAcc"), hudChars = $("hudChars");
   const resWpm = $("resWpm"), resAcc = $("resAcc"), resChars = $("resChars"), resErr = $("resErr"), resBest = $("resBest");
   const navWrap = $("navWrap"), prevBtn = $("prevBtn"), nextBtn = $("nextBtn"), tryAgainBtn = $("tryAgainBtn"), againBtn = $("againBtn"), menuBtn = $("menuBtn"), homeBtn = $("homeBtn"), homeLink = $("homeLink"), resultHint = $("resultHint"), outBox = $("outBox"), outPre = $("outPre");
+  const playPanel = $("playPanel"), playBack = $("playBack"), playCode = $("playCode"), playLang = $("playLang"), runBtn = $("runBtn"), resetCodeBtn = $("resetCodeBtn"), playOut = $("playOut"), playOutBox = $("playOutBox"), editRunBtn = $("editRunBtn");
 
   let mode = "code", lang = "python", level = "beginner", lesson = "all", duration = 30;
   let state = "idle";
@@ -377,7 +401,7 @@
   refreshSetup();
   updateSetupBadge();
 
-  function show(panel) { [setupPanel, menuPanel, gamePanel, resultPanel, statsPanel].forEach((p) => p.classList.add("hidden")); panel.classList.remove("hidden"); if (panel === setupPanel) updateSetupBadge(); }
+  function show(panel) { [setupPanel, menuPanel, gamePanel, resultPanel, statsPanel, playPanel].forEach((p) => p.classList.add("hidden")); panel.classList.remove("hidden"); if (panel === setupPanel) updateSetupBadge(); }
 
   startBtn.addEventListener("click", () => { if (lessonsActive()) openMenu("setup"); else startGame(); });
 
@@ -603,6 +627,10 @@
     const curLesson = single ? lessonsFor(lang, level)[Number(lesson)] : null;
     if (curLesson && curLesson.output) { outPre.textContent = curLesson.output; outBox.classList.remove("hidden"); }
     else outBox.classList.add("hidden");
+    // "Edit & run" only where we have an in-browser runtime (Python, JavaScript, SQL).
+    const runnable = single && (lang === "python" || lang === "javascript" || lang === "sql");
+    editRunBtn.classList.toggle("hidden", !runnable);
+    if (runnable && curLesson) { resCode = curLesson.code; resLang = lang; resOutput = curLesson.output || ""; }
     navWrap.classList.toggle("hidden", !single);
     againBtn.classList.toggle("hidden", single);
     menuBtn.classList.toggle("hidden", !lessonsMode);
@@ -639,6 +667,125 @@
   homeBtn.addEventListener("click", goHome);
   homeLink.addEventListener("click", goHome);
   function goHome() { if (timerId) clearInterval(timerId); state = "idle"; show(setupPanel); }
+
+  // ---------- Playground: edit & run the code in the browser ----------
+  const SQL_FIXTURE =
+    "CREATE TABLE departments (id INTEGER, name TEXT, location TEXT);" +
+    "INSERT INTO departments VALUES (1,'Sales','NY'),(2,'IT','SF'),(3,'HR','LA');" +
+    "CREATE TABLE employees (id INTEGER, first_name TEXT, last_name TEXT, name TEXT, department TEXT, department_id INTEGER, dept TEXT, role TEXT, salary INTEGER, manager_id INTEGER, email TEXT, status TEXT);" +
+    "INSERT INTO employees VALUES (1,'Ada','Lovelace','Ada Lovelace','Sales',1,'Sales','lead',120000,NULL,'ada@x.com','active'),(2,'Bob','Stone','Bob Stone','Sales',1,'Sales','ic',45000,1,NULL,'active'),(3,'Cy','Park','Cy Park','IT',2,'IT','ic',90000,1,'cy@x.com','review'),(4,'Di','Iron','Di Iron','HR',3,'HR','lead',75000,1,'di@x.com','active');" +
+    "CREATE TABLE customers (id INTEGER, name TEXT);" +
+    "INSERT INTO customers VALUES (1,'Acme'),(2,'Globex'),(3,'Initech');" +
+    "CREATE TABLE orders (id INTEGER, customer_id INTEGER, cust_id INTEGER, amount INTEGER, total INTEGER, status TEXT, order_date TEXT);" +
+    "INSERT INTO orders VALUES (1,1,1,250,250,'completed','2026-01-01'),(2,1,1,80,80,'pending','2026-01-03'),(3,2,2,500,500,'completed','2026-01-05');" +
+    "CREATE TABLE sales (day TEXT, amount INTEGER);" +
+    "INSERT INTO sales VALUES ('2026-01-01',100),('2026-01-02',150),('2026-01-03',120);" +
+    "CREATE TABLE counters (id INTEGER PRIMARY KEY, hits INTEGER); INSERT INTO counters VALUES (1,5);";
+
+  let playCtxLang = "", playCtxOrig = "", playCtxOutput = "", pyReady = null, sqlReady = null;
+  let resCode = "", resLang = "", resOutput = "", runInFlight = false;   // current single-lesson context for "Edit & run"
+
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = src; s.onload = () => resolve(); s.onerror = () => reject(new Error("load failed"));
+      document.head.appendChild(s);
+    });
+  }
+  function fmtVal(v) { if (typeof v === "string") return v; try { return JSON.stringify(v); } catch (e) { return String(v); } }
+  function fallbackText() { return "Couldn't load the runtime (you may be offline).\n\nExpected output:\n" + (playCtxOutput || "—"); }
+
+  function runJSMain(code) {
+    const logs = [];
+    const push = (a) => logs.push(a.map(fmtVal).join(" "));
+    const c = { log: (...a) => push(a), info: (...a) => push(a), warn: (...a) => push(a), error: (...a) => push(a), debug: (...a) => push(a) };
+    let err = false;
+    try { new Function("console", '"use strict";\n' + code)(c); }
+    catch (e) { logs.push(String(e)); err = true; }
+    return { text: logs.join("\n") || "(no output)", err };
+  }
+  // Run JS in a Worker so an infinite loop can be terminated instead of freezing the tab.
+  // Falls back to main-thread execution where Workers aren't available (e.g. file://).
+  function runJS(code) {
+    return new Promise((resolve) => {
+      let worker;
+      try {
+        const src = 'onmessage=function(e){var L=[],f=function(v){if(typeof v==="string")return v;try{return JSON.stringify(v)}catch(_){return String(v)}},p=function(a){L.push([].map.call(a,f).join(" "))},c={log:function(){p(arguments)},info:function(){p(arguments)},warn:function(){p(arguments)},error:function(){p(arguments)},debug:function(){p(arguments)}},err=false;try{(new Function("console",e.data))(c)}catch(x){L.push(String(x));err=true}postMessage({text:L.join("\\n")||"(no output)",err:err})}';
+        worker = new Worker(URL.createObjectURL(new Blob([src], { type: "application/javascript" })));
+      } catch (e) { resolve(runJSMain(code)); return; }
+      const timer = setTimeout(() => { try { worker.terminate(); } catch (_) {} resolve({ text: "⏱ Stopped — the code ran longer than 4s (possible infinite loop).", err: true }); }, 4000);
+      worker.onmessage = (ev) => { clearTimeout(timer); try { worker.terminate(); } catch (_) {} resolve(ev.data); };
+      worker.onerror = () => { clearTimeout(timer); try { worker.terminate(); } catch (_) {} resolve(runJSMain(code)); };
+      worker.postMessage(code);
+    });
+  }
+  // Don't cache a rejected load promise — clear it so a later retry (e.g. after reconnecting) can work.
+  function getPyodide() { if (!pyReady) pyReady = loadScript("https://cdn.jsdelivr.net/pyodide/v0.28.0/full/pyodide.js").then(() => loadPyodide()).catch((e) => { pyReady = null; throw e; }); return pyReady; }
+  async function runPython(code) {
+    let py;
+    try { playOut.textContent = "Loading Python… (first run downloads the runtime)"; py = await getPyodide(); }
+    catch (e) { return { text: fallbackText(), err: false }; }
+    let err = false, errText = "", out = "";
+    try {
+      py.runPython("import sys, io\n_o = io.StringIO()\nsys.stdout = _o\nsys.stderr = _o");
+      try { py.runPython(code); }
+      catch (e) { err = true; errText = String(e.message || e).split("\n").slice(-12).join("\n").trim(); }
+      try { out = py.runPython("_o.getvalue()"); } catch (_) {}
+    } finally {
+      try { py.runPython("sys.stdout = sys.__stdout__\nsys.stderr = sys.__stderr__"); } catch (_) {}
+    }
+    const text = (out || "") + (errText ? (out ? "\n" : "") + errText : "");
+    return { text: text || "(no output)", err };
+  }
+  function getSQL() { if (!sqlReady) sqlReady = loadScript("https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/sql-wasm.js").then(() => initSqlJs({ locateFile: (f) => "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/" + f })).catch((e) => { sqlReady = null; throw e; }); return sqlReady; }
+  function formatSQL(res) {
+    if (!res || !res.length) return "(no rows)";
+    const r = res[res.length - 1];
+    let lines = [r.columns.join(" | ")].concat(r.values.map((row) => row.map((v) => v === null ? "NULL" : String(v)).join(" | ")));
+    if (lines.length > 11) lines = lines.slice(0, 11).concat(["… " + (r.values.length - 10) + " more rows"]);
+    return lines.join("\n");
+  }
+  async function runSQL(code) {
+    let SQL;
+    try { playOut.textContent = "Loading SQL engine…"; SQL = await getSQL(); }
+    catch (e) { return { text: fallbackText(), err: false }; }
+    const db = new SQL.Database(); let err = false, text = "";
+    try { db.run(SQL_FIXTURE); text = formatSQL(db.exec(code)); }
+    catch (e) { err = true; text = String(e.message || e); }
+    try { db.close(); } catch (_) {}
+    return { text: text || "(no rows)", err };
+  }
+
+  function openPlayground(code, lng, output) {
+    playCtxLang = lng; playCtxOrig = code; playCtxOutput = output || "";
+    playCode.value = code; playLang.textContent = LANG_NAMES[lng];
+    playOut.textContent = ""; playOut.classList.remove("err"); playOutBox.classList.add("hidden");
+    runInFlight = false; runBtn.disabled = false;
+    show(playPanel); playCode.focus();
+  }
+  async function runCurrent() {
+    if (runInFlight) return;                          // ignore extra clicks while a run is in flight
+    runInFlight = true;
+    const code = playCode.value;
+    runBtn.disabled = true; playOutBox.classList.remove("hidden"); playOut.classList.remove("err"); playOut.textContent = "Running…";
+    let res;
+    try {
+      if (playCtxLang === "javascript") res = await runJS(code);
+      else if (playCtxLang === "python") res = await runPython(code);
+      else if (playCtxLang === "sql") res = await runSQL(code);
+      else res = { text: "Live run isn't available for this language.", err: false };
+    } catch (e) { res = { text: String(e), err: true }; }
+    finally { runInFlight = false; runBtn.disabled = false; }
+    // Don't write into a panel the user has already navigated away from.
+    if (!playPanel.classList.contains("hidden")) {
+      playOut.textContent = res.text || "(no output)";
+      playOut.classList.toggle("err", !!res.err);
+    }
+  }
+  editRunBtn.addEventListener("click", () => openPlayground(resCode, resLang, resOutput));
+  playBack.addEventListener("click", () => show(resultPanel));
+  runBtn.addEventListener("click", runCurrent);
+  resetCodeBtn.addEventListener("click", () => { playCode.value = playCtxOrig; playCode.focus(); });
   conceptBar.addEventListener("click", () => { conceptExplain.classList.toggle("hidden"); });
   gamePanel.addEventListener("click", () => { if (state === "running") capture.focus(); });
   resultPanel.addEventListener("click", (e) => {

@@ -120,6 +120,36 @@ test("output box hidden for a definition-only lesson", async ({ page }) => {
   await expect(page.locator("#outBox")).toBeHidden();
 });
 
+test("playground runs edited JavaScript live", async ({ page }) => {
+  await page.goto(FILE);
+  const i = await page.evaluate(() => {
+    const C = JSON.parse(document.getElementById("curriculumData").textContent);
+    return C.javascript.beginner.findIndex((l) => l.title === "console.log output");
+  });
+  await page.click('#langs [data-lang="javascript"]');
+  await page.click("#startBtn");
+  await page.click(`#menuList [data-lesson="${i}"]`);
+  await autotype(page);
+  await expect(page.locator("#editRunBtn")).toBeVisible();
+  await page.click("#editRunBtn");
+  await expect(page.locator("#playPanel")).toBeVisible();
+  await page.fill("#playCode", 'console.log("hi", 2 + 2)');
+  await page.click("#runBtn");
+  await expect(page.locator("#playOut")).toHaveText("hi 4");
+  await page.click("#playBack");
+  await expect(page.locator("#resultPanel")).toBeVisible();
+});
+
+test("Edit & run is hidden for Bash (no in-browser runtime)", async ({ page }) => {
+  await page.goto(FILE);
+  await page.click('#langs [data-lang="bash"]');
+  await page.click("#startBtn");
+  await page.click('#menuList [data-lesson="0"]');
+  await autotype(page);
+  await expect(page.locator("#resultPanel")).toBeVisible();
+  await expect(page.locator("#editRunBtn")).toBeHidden();
+});
+
 test("Home button returns to setup from results", async ({ page }) => {
   await page.goto(FILE);
   await page.click("#startBtn");
