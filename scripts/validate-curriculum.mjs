@@ -71,6 +71,10 @@ for (const lang of LANGS) {
         if (ENTITY.test(les.explain)) err(`${at} explain contains an unescaped HTML entity`);
         if (les.explain.length > 160) err(`${at} explain too long (${les.explain.length} > 160)`);
       }
+      if ("output" in les) {
+        if (typeof les.output !== "string" || les.output === "") err(`${at} output, if present, must be a non-empty string`);
+        else if (les.output.length > 300) err(`${at} output too long (${les.output.length} > 300)`);
+      }
     });
   }
 }

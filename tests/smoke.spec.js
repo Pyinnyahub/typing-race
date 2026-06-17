@@ -92,6 +92,34 @@ test("completing a lesson records progress (streak + done mark)", async ({ page 
   await expect(page.locator("#streakBadge")).toBeVisible();
 });
 
+test("output box shows for a lesson that prints", async ({ page }) => {
+  await page.goto(FILE);
+  // find the Python beginner "Print output" lesson index, play it, expect the output box
+  const i = await page.evaluate(() => {
+    const C = JSON.parse(document.getElementById("curriculumData").textContent);
+    return C.python.beginner.findIndex((l) => l.title === "Print output");
+  });
+  await page.click("#startBtn");
+  await page.click(`#menuList [data-lesson="${i}"]`);
+  await autotype(page);
+  await expect(page.locator("#outBox")).toBeVisible();
+  await expect(page.locator("#outPre")).toHaveText("Hello, world!");
+});
+
+test("output box hidden for a definition-only lesson", async ({ page }) => {
+  await page.goto(FILE);
+  const i = await page.evaluate(() => {
+    const C = JSON.parse(document.getElementById("curriculumData").textContent);
+    return C.typescript.beginner.findIndex((l) => !l.output);
+  });
+  await page.click('#langs [data-lang="typescript"]');
+  await page.click("#startBtn");
+  await page.click(`#menuList [data-lesson="${i}"]`);
+  await autotype(page);
+  await expect(page.locator("#resultPanel")).toBeVisible();
+  await expect(page.locator("#outBox")).toBeHidden();
+});
+
 test("Home button returns to setup from results", async ({ page }) => {
   await page.goto(FILE);
   await page.click("#startBtn");
