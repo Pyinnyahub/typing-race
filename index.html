@@ -19,7 +19,10 @@
     min-height: 100vh; padding: 20px; -webkit-font-smoothing: antialiased;
   }
   .app { width: 100%; max-width: 840px; }
-  h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; text-align: center; margin-bottom: 4px; }
+  h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; text-align: center; margin-bottom: 4px; cursor: pointer; user-select: none; }
+  h1:hover .accent { filter: brightness(1.15); }
+  .sec-row { display: flex; gap: 10px; margin-top: 10px; }
+  .sec-row .btn-ghost { margin-top: 0; }
   h1 .accent { color: var(--accent); }
   .subtitle { text-align: center; color: var(--dim); font-size: 0.85rem; margin-bottom: 24px; }
 
@@ -158,7 +161,7 @@
 </head>
 <body>
 <div class="app">
-  <h1>Typing<span class="accent">Race</span> <span style="font-size:1rem;color:var(--dim)">/dev</span></h1>
+  <h1 id="homeLink" title="Back to home">Typing<span class="accent">Race</span> <span style="font-size:1rem;color:var(--dim)">/dev</span></h1>
   <div class="subtitle">Practice typing and learn to code — beginner to advanced.</div>
 
   <!-- SETUP -->
@@ -258,7 +261,10 @@
       <button class="btn-sec" id="tryAgainBtn">↻&nbsp;Try Again</button>
       <button class="btn-primary" id="nextBtn">Next&nbsp;→</button>
     </div>
-    <button class="btn-ghost hidden" id="menuBtn">☰&nbsp;All lessons</button>
+    <div class="sec-row">
+      <button class="btn-ghost hidden" id="menuBtn">☰&nbsp;All lessons</button>
+      <button class="btn-ghost" id="homeBtn">🏠&nbsp;Home</button>
+    </div>
     <div class="hint" id="resultHint" style="margin-top:14px"></div>
   </div>
 </div>
@@ -288,7 +294,7 @@
   const conceptBar = $("conceptBar"), conceptName = $("conceptName"), conceptMeta = $("conceptMeta"), conceptExplain = $("conceptExplain");
   const hudTime = $("hudTime"), hudWpm = $("hudWpm"), hudAcc = $("hudAcc"), hudChars = $("hudChars");
   const resWpm = $("resWpm"), resAcc = $("resAcc"), resChars = $("resChars"), resErr = $("resErr"), resBest = $("resBest");
-  const navWrap = $("navWrap"), prevBtn = $("prevBtn"), nextBtn = $("nextBtn"), tryAgainBtn = $("tryAgainBtn"), againBtn = $("againBtn"), menuBtn = $("menuBtn"), resultHint = $("resultHint");
+  const navWrap = $("navWrap"), prevBtn = $("prevBtn"), nextBtn = $("nextBtn"), tryAgainBtn = $("tryAgainBtn"), againBtn = $("againBtn"), menuBtn = $("menuBtn"), homeBtn = $("homeBtn"), homeLink = $("homeLink"), resultHint = $("resultHint");
 
   let mode = "code", lang = "python", level = "beginner", lesson = "all", duration = 30;
   let state = "idle";
@@ -622,6 +628,9 @@
   prevBtn.addEventListener("click", () => gotoLesson(-1));
   nextBtn.addEventListener("click", () => gotoLesson(1));
   menuBtn.addEventListener("click", () => openMenu("result"));
+  homeBtn.addEventListener("click", goHome);
+  homeLink.addEventListener("click", goHome);
+  function goHome() { if (timerId) clearInterval(timerId); state = "idle"; show(setupPanel); }
   conceptBar.addEventListener("click", () => { conceptExplain.classList.toggle("hidden"); });
   gamePanel.addEventListener("click", () => { if (state === "running") capture.focus(); });
   resultPanel.addEventListener("click", (e) => {

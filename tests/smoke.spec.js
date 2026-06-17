@@ -92,6 +92,26 @@ test("completing a lesson records progress (streak + done mark)", async ({ page 
   await expect(page.locator("#streakBadge")).toBeVisible();
 });
 
+test("Home button returns to setup from results", async ({ page }) => {
+  await page.goto(FILE);
+  await page.click("#startBtn");
+  await page.click('#menuList [data-lesson="0"]');
+  await autotype(page);
+  await expect(page.locator("#resultPanel")).toBeVisible();
+  await page.click("#homeBtn");
+  await expect(page.locator("#setupPanel")).toBeVisible();
+});
+
+test("clicking the title returns home mid-game", async ({ page }) => {
+  await page.goto(FILE);
+  await page.click("#startBtn");
+  await page.click('#menuList [data-lesson="0"]');
+  await expect(page.locator("#gamePanel")).toBeVisible();
+  await page.click("#homeLink");
+  await expect(page.locator("#setupPanel")).toBeVisible();
+  await expect(page.locator("#gamePanel")).toBeHidden();
+});
+
 test("progress dashboard opens with stats", async ({ page }) => {
   await page.goto(FILE);
   await page.click("#progressBtn");
