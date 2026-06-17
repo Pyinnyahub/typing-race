@@ -13,6 +13,12 @@ A single-file, zero-dependency typing trainer that helps you **practice typing a
 - **Learn while you type** — a concept banner names what each snippet teaches; click it for an explanation.
 - **Race modes** — a **Mix all** code race and an **English words** race, timed (15s / 30s / 60s / 120s).
 - **Best scores** saved per lesson / level / race in your browser's `localStorage`.
+- **Progress dashboard** — day streak, lessons completed per language, best WPM, runs, days played.
+- **Run your code** — for Python / JavaScript / SQL lessons, edit the snippet and **run it live in the browser** (Pyodide / a sandboxed Worker / sql.js, all lazy-loaded) to see real output.
+- **Spaced repetition** — completed lessons are scheduled for review at growing intervals (1 → 2 → 4 → 8 → 16 → 32 days); a **🔁 Review** button surfaces what's due.
+- **⌨ Weak-key drill** — the app tracks the characters you miss most and generates a drill dense in exactly those keys (keybr-style).
+- **👻 Ghost pacer** — optionally race your own best pace, with a live in-stream ghost marker and an ahead/behind indicator (SpeedTyper-style).
+- **✎ Your own code** — paste any snippet, pick a language, and practice typing it; it's remembered locally and supports Edit & run (SpeedCoder-style).
 
 ## Run it
 

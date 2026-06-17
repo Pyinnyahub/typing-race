@@ -143,6 +143,35 @@
   .ch.nl.ok { color: var(--correct); opacity: 0.45; }
   .ch.caret { border-left: 2px solid var(--accent); margin-left: -2px; animation: blink 1s steps(1) infinite; }
   @keyframes blink { 50% { border-color: transparent; } }
+  /* Ghost pacer: a faint marker tracking your best pace */
+  .ch.ghost { box-shadow: inset -2px 0 0 0 #6aa3ff; border-radius: 1px; }
+  .ghost-val.ahead { color: var(--correct); }
+  .ghost-val.behind { color: var(--incorrect); }
+  .ghost-toggle {
+    display: block; width: 100%; background: transparent; border: 1.5px dashed var(--pending); color: var(--dim);
+    padding: 9px; border-radius: 10px; font-family: inherit; font-size: 0.82rem; cursor: pointer;
+    transition: all 0.15s ease; margin: 4px 0 0;
+  }
+  .ghost-toggle:hover { border-color: #6aa3ff; color: #6aa3ff; }
+  .ghost-toggle.on { border-style: solid; border-color: #6aa3ff; color: #6aa3ff; background: rgba(106,163,255,0.08); font-weight: 700; }
+  .progress-link.drill-due { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); font-weight: 700; }
+  /* Weak-key chips in the dashboard */
+  .weak-wrap { margin: 4px 0 18px; }
+  .weak-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+  .weak-title { font-size: 0.84rem; color: var(--text); font-weight: 700; }
+  .weak-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .key-chip {
+    display: inline-flex; align-items: baseline; gap: 6px; background: #1f232f; border: 1px solid var(--pending);
+    border-radius: 8px; padding: 5px 10px; font-size: 0.86rem;
+  }
+  .key-chip .kc-ch { color: var(--incorrect); font-weight: 700; }
+  .key-chip .kc-rate { color: var(--dim); font-size: 0.72rem; }
+  .weak-drill-btn {
+    background: var(--accent); color: #1a1505; border: none; border-radius: 9px; padding: 8px 14px;
+    font-family: inherit; font-size: 0.82rem; font-weight: 700; cursor: pointer; white-space: nowrap;
+  }
+  .weak-drill-btn:hover { filter: brightness(1.08); }
+  .weak-empty { color: var(--dim); font-size: 0.8rem; }
   .capture { position: absolute; opacity: 0; pointer-events: none; left: -9999px; }
   .shake { animation: shake 0.16s ease; }
   @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
@@ -183,6 +212,7 @@
       <span class="streak-badge hidden" id="streakBadge"></span>
       <div class="setup-actions">
         <button class="progress-link review-due hidden" id="reviewBtn">🔁 Review</button>
+        <button class="progress-link drill-due hidden" id="drillBtn">⌨ Drill</button>
         <button class="progress-link" id="progressBtn">📊 My progress</button>
       </div>
     </div>
@@ -190,6 +220,7 @@
     <div class="row" id="modes">
       <button class="opt-btn active" data-mode="code">&lt;/&gt; Code lessons</button>
       <button class="opt-btn" data-mode="english">English words</button>
+      <button class="opt-btn" data-mode="custom">✎ Your code</button>
     </div>
     <div id="langWrap">
       <div class="label">Language</div>
@@ -211,7 +242,28 @@
         <button class="opt-btn" data-sec="120">120s</button>
       </div>
     </div>
+    <button class="ghost-toggle" id="ghostBtn">👻 Ghost pacer: Off</button>
     <button class="btn-primary" id="startBtn">Choose a lesson &nbsp;→</button>
+  </div>
+
+  <!-- PASTE YOUR OWN CODE -->
+  <div class="panel hidden" id="customPanel">
+    <div class="menu-head">
+      <button class="menu-back" id="customBack">←&nbsp;Back</button>
+      <div style="text-align:right"><div class="menu-title">Your own code</div><div class="menu-count">paste any snippet to practice typing it</div></div>
+    </div>
+    <div class="label">Language (for Edit &amp; run)</div>
+    <div class="row" id="customLangs">
+      <button class="opt-btn active" data-clang="plain">Plain text</button>
+      <button class="opt-btn" data-clang="python">Python</button>
+      <button class="opt-btn" data-clang="javascript">JavaScript</button>
+      <button class="opt-btn" data-clang="sql">SQL</button>
+    </div>
+    <textarea class="play-code" id="customCode" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="Paste or type the code you want to practice…"></textarea>
+    <div class="play-bar">
+      <button class="btn-ghost" id="customClear">↺&nbsp;Clear</button>
+      <button class="btn-primary" id="customStart">Practice typing&nbsp;→</button>
+    </div>
   </div>
 
   <!-- LESSON MENU -->
@@ -265,6 +317,7 @@
       <div class="stat"><div class="val" id="hudWpm">0</div><div class="key">WPM</div></div>
       <div class="stat"><div class="val" id="hudAcc">100%</div><div class="key">Accuracy</div></div>
       <div class="stat"><div class="val" id="hudChars">0</div><div class="key">Chars</div></div>
+      <div class="stat hidden" id="hudGhostWrap"><div class="val ghost-val" id="hudGhost">0</div><div class="key">👻 vs best</div></div>
     </div>
     <div class="concept" id="conceptBar" title="Click for an explanation of this concept">
       <span class="c-left"><span class="c-name" id="conceptName"></span><span class="c-info">ⓘ explain</span></span>
@@ -313,8 +366,8 @@
     "import export default async await fetch then catch error data result type interface state props render event handler " +
     "build test deploy server client cache query model route param config token user login logout commit branch merge push").split(/\s+/);
 
-  const LANG_NAMES = { python: "Python", sql: "SQL", bash: "Bash", typescript: "TypeScript", javascript: "JavaScript", mix: "Mix" };
-  const LEVEL_NAMES = { beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced" };
+  const LANG_NAMES = { python: "Python", sql: "SQL", bash: "Bash", typescript: "TypeScript", javascript: "JavaScript", mix: "Mix", plain: "Text" };
+  const LEVEL_NAMES = { beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced", custom: "Custom" };
   const LEVEL_ORDER = ["beginner", "intermediate", "advanced"];
 
   const $ = (id) => document.getElementById(id);
@@ -325,6 +378,8 @@
   const streamEl = $("stream"), capture = $("capture"), gameHint = $("gameHint");
   const conceptBar = $("conceptBar"), conceptName = $("conceptName"), conceptMeta = $("conceptMeta"), conceptExplain = $("conceptExplain");
   const hudTime = $("hudTime"), hudWpm = $("hudWpm"), hudAcc = $("hudAcc"), hudChars = $("hudChars");
+  const hudGhostWrap = $("hudGhostWrap"), hudGhost = $("hudGhost"), ghostBtn = $("ghostBtn"), drillBtn = $("drillBtn");
+  const customPanel = $("customPanel"), customBack = $("customBack"), customLangs = $("customLangs"), customCodeEl = $("customCode"), customClear = $("customClear"), customStart = $("customStart");
   const resWpm = $("resWpm"), resAcc = $("resAcc"), resChars = $("resChars"), resErr = $("resErr"), resBest = $("resBest");
   const navWrap = $("navWrap"), prevBtn = $("prevBtn"), nextBtn = $("nextBtn"), tryAgainBtn = $("tryAgainBtn"), againBtn = $("againBtn"), menuBtn = $("menuBtn"), homeBtn = $("homeBtn"), homeLink = $("homeLink"), resultHint = $("resultHint"), outBox = $("outBox"), outPre = $("outPre");
   const playPanel = $("playPanel"), playBack = $("playBack"), playCode = $("playCode"), playLang = $("playLang"), runBtn = $("runBtn"), resetCodeBtn = $("resetCodeBtn"), playOut = $("playOut"), playOutBox = $("playOutBox"), editRunBtn = $("editRunBtn");
@@ -334,6 +389,8 @@
   let target = "", typed = [], pos = 0, correctChars = 0, totalKeys = 0;
   let startTime = 0, timerId = null;
   let segments = [], curSegIdx = -1, feedSnippets = [], codeQueue = [], orderMode = false, singleRun = false, justStarted = false;
+  let ghostActive = false, ghostCps = 0, ghostIndex = -1;   // ghost pacer (race your own best)
+  let customText = "", customLang = "plain";                 // "Your own code" snippet + its run language
   const BEST_PREFIX = "typingRaceDevBest";
 
   function shuffle(arr) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
@@ -363,6 +420,10 @@
     s.streak = s.streak || 0; s.longest = s.longest || 0; s.days = s.days || 0; s.lastDay = s.lastDay || "";
     s.lessons = s.lessons || {};   // "lang|level|idx" -> best WPM for that lesson
     s.srs = s.srs || {};           // "lang|level|idx" -> { box, due, interval, acc } spaced-repetition card
+    s.keys = s.keys || {};         // character -> { miss, total } for weak-key targeting
+    s.ghostOn = !!s.ghostOn;       // race-your-own-best pacer toggle
+    s.customCode = s.customCode || "";    // last "Your own code" snippet
+    s.customLang = s.customLang || "plain";
     return s;
   }
   // Leitner spaced repetition: a correct pass pushes the card to a longer interval; a poor pass resets it.
@@ -382,10 +443,22 @@
   let stats = loadStats();
   function saveStats() { storageSet(STATS_KEY, JSON.stringify(stats)); }
   function dstr(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  // Fold per-key accuracy from the COMMITTED characters (typed[] vs target[]), so a
+  // backspace-and-retype counts a position once, not once per attempt. Drives weak-key targeting.
+  function foldKeyStats() {
+    for (let i = 0; i < pos && i < target.length; i++) {
+      const exp = target[i];
+      if (exp === " " || exp === "\t" || exp === "\n" || typed[i] === undefined) continue;
+      const rk = stats.keys[exp] || (stats.keys[exp] = { miss: 0, total: 0 });
+      rk.total++; if (typed[i] !== exp) rk.miss++;
+    }
+  }
   let lastInterval = 0;
   function recordAttempt(wpm, keys, acc) {
     stats.runs++; stats.chars += keys;
-    if (wpm <= 400 && wpm > stats.bestWpm) stats.bestWpm = wpm;
+    foldKeyStats();
+    // Global "Best WPM" reflects real typing speed (lessons + races), not the short-token drill or pasted code.
+    if ((mode === "code" || mode === "english") && wpm <= 400 && wpm > stats.bestWpm) stats.bestWpm = wpm;
     const today = dstr(new Date());
     if (stats.lastDay !== today) {
       const y = new Date(); y.setDate(y.getDate() - 1);
@@ -412,12 +485,63 @@
       .filter((c) => lessonsFor(c.lang, c.level)[c.idx])
       .sort((a, b) => (stats.srs[a.key].due || "").localeCompare(stats.srs[b.key].due || ""));
   }
+  // ---------- Weak-key targeting (keybr-style) ----------
+  // The characters you miss most — needs a minimum sample so a single slip doesn't dominate.
+  function weakKeys() {
+    return Object.keys(stats.keys)
+      .map((ch) => ({ ch: ch, miss: stats.keys[ch].miss, total: stats.keys[ch].total }))
+      .filter((o) => o.total >= 6 && o.miss > 0)
+      .map((o) => ({ ch: o.ch, miss: o.miss, total: o.total, rate: o.miss / o.total }))
+      .sort((a, b) => b.rate - a.rate || b.miss - a.miss)
+      .slice(0, 8);
+  }
+  // Short, realistic code tokens. The drill prefers tokens containing your weak characters,
+  // so practice is dense in exactly the keys you fumble.
+  const DRILL_TOKENS = [
+    "arr[i]", "x => x", "obj.key", "f(a, b)", "i++", "a === b", "{ k: v }", "n - 1",
+    "list[0]", "() => {}", "a && b", "x || y", "self._x", "k: v;", "if (x) {", "return n;",
+    "a |= b", "x * 2", "s.split()", "a?.b", "`${x}`", "#tag", "p && q", "n % 2", "a + b",
+    "<T>", "x: y", "/regex/", "a - b", "$(sel)", "map()", '"str"', "'c'", "x >= 0", "!done",
+    "a => b", "[...a]", "x ** 2", "co_re", "v != 0", "{n}", "(y)", "a; b", "i <= n", "x->y",
+  ];
+  function buildDrillLine(weak) {
+    const wset = new Set(weak.map((w) => w.ch));
+    const has = (t) => [...t].some((c) => wset.has(c));
+    const preferred = wset.size ? DRILL_TOKENS.filter(has) : [];
+    const out = [];
+    for (let i = 0; i < 9; i++) {
+      // 70% of the time pull a token containing a weak key (when we have any)
+      const pool = (preferred.length && Math.random() < 0.7) ? preferred : DRILL_TOKENS;
+      out.push(pool[Math.floor(Math.random() * pool.length)]);
+    }
+    return out.join("  ");
+  }
+
+  // The score key for the current run — used both to load the ghost's pace and to save the best.
+  function computeTag() {
+    if (mode === "drill") return { tag: "drill_" + duration, label: "Weak-key drill · " + duration + "s" };
+    if (mode === "custom") return { tag: "custom", label: "Your code" };
+    if (mode === "code" && lang !== "mix") {
+      const lvl = LANG_NAMES[lang] + " · " + LEVEL_NAMES[level];
+      if (lesson !== "all") return { tag: "code_" + lang + "_" + level + "_L" + lesson, label: lvl + " · Lesson " + (Number(lesson) + 1) };
+      return { tag: "code_" + lang + "_" + level + "_all", label: lvl + " · All" };
+    }
+    if (mode === "code") return { tag: "code_mix_" + duration, label: "Mix · " + duration + "s" };
+    return { tag: "english_" + duration, label: "Words · " + duration + "s" };
+  }
+
   function updateSetupBadge() {
     if (stats.streak > 0) { streakBadge.textContent = "🔥 " + stats.streak + " day" + (stats.streak > 1 ? "s" : ""); streakBadge.classList.remove("hidden"); }
     else streakBadge.classList.add("hidden");
     const n = dueCards().length;
     if (n > 0) { reviewBtn.textContent = "🔁 Review (" + n + ")"; reviewBtn.classList.remove("hidden"); }
     else reviewBtn.classList.add("hidden");
+    drillBtn.classList.toggle("hidden", weakKeys().length < 3);
+    updateGhostBtn();
+  }
+  function updateGhostBtn() {
+    ghostBtn.textContent = "👻 Ghost pacer: " + (stats.ghostOn ? "On" : "Off");
+    ghostBtn.classList.toggle("on", !!stats.ghostOn);
   }
   function lessonsActive() { return mode === "code" && lang !== "mix"; }
 
@@ -431,14 +555,16 @@
     langWrap.classList.toggle("hidden", mode !== "code");
     const racePath = (mode === "english") || (mode === "code" && lang === "mix");
     timeWrap.classList.toggle("hidden", !racePath);
-    startBtn.innerHTML = racePath ? "Start race &nbsp;→" : "Choose a lesson &nbsp;→";
+    startBtn.innerHTML = mode === "custom" ? "Paste your code &nbsp;→" : (racePath ? "Start race &nbsp;→" : "Choose a lesson &nbsp;→");
   }
   refreshSetup();
   updateSetupBadge();
 
-  function show(panel) { [setupPanel, menuPanel, gamePanel, resultPanel, statsPanel, playPanel].forEach((p) => p.classList.add("hidden")); panel.classList.remove("hidden"); if (panel === setupPanel) updateSetupBadge(); }
+  function show(panel) { [setupPanel, menuPanel, gamePanel, resultPanel, statsPanel, playPanel, customPanel].forEach((p) => p.classList.add("hidden")); panel.classList.remove("hidden"); if (panel === setupPanel) updateSetupBadge(); }
 
-  startBtn.addEventListener("click", () => { if (lessonsActive()) openMenu("setup"); else startGame(); });
+  startBtn.addEventListener("click", () => { if (mode === "custom") openCustom(); else if (lessonsActive()) openMenu("setup"); else startGame(); });
+  ghostBtn.addEventListener("click", () => { stats.ghostOn = !stats.ghostOn; saveStats(); updateGhostBtn(); });
+  drillBtn.addEventListener("click", startDrill);
 
   // ---------- Progress dashboard ----------
   progressBtn.addEventListener("click", () => { renderStats(); show(statsPanel); });
@@ -449,7 +575,7 @@
     stats = normalizeStats({}); renderStats(); updateSetupBadge();
   });
   function renderStats() {
-    const langKeys = Object.keys(LANG_NAMES).filter((k) => k !== "mix");
+    const langKeys = Object.keys(LANG_NAMES).filter((k) => k !== "mix" && k !== "plain");
     let totalDone = 0, totalLessons = 0, bars = "";
     for (const lk of langKeys) {
       let done = 0, tot = 0;
@@ -462,9 +588,22 @@
       ["🔥 " + stats.streak, "Day streak"], [String(stats.longest), "Longest"], [totalDone + "/" + totalLessons, "Lessons done"],
       [String(stats.bestWpm), "Best WPM"], [String(stats.runs), "Runs"], [String(stats.days), "Days played"],
     ];
+    const weak = weakKeys();
+    let weakHtml = '<div class="weak-wrap"><div class="weak-head"><span class="weak-title">⌨ Keys you miss most</span>';
+    if (weak.length >= 3) weakHtml += '<button class="weak-drill-btn" id="weakDrillBtn">Drill these →</button>';
+    weakHtml += "</div>";
+    if (weak.length) {
+      weakHtml += '<div class="weak-chips">' + weak.map((w) =>
+        '<span class="key-chip"><span class="kc-ch">' + escHtml(w.ch === " " ? "␣" : w.ch) + '</span><span class="kc-rate">' + Math.round(w.rate * 100) + "% miss</span></span>").join("") + "</div>";
+    } else {
+      weakHtml += '<div class="weak-empty">Type a few lessons and your trickiest keys will show up here.</div>';
+    }
+    weakHtml += "</div>";
     statsBody.innerHTML =
       '<div class="stats-grid">' + cards.map((c) => '<div class="stat-card"><div class="sc-v">' + c[0] + '</div><div class="sc-k">' + c[1] + "</div></div>").join("") + "</div>" +
-      '<div class="pbar-wrap">' + bars + "</div>";
+      '<div class="pbar-wrap">' + bars + "</div>" + weakHtml;
+    const wdb = $("weakDrillBtn");
+    if (wdb) wdb.addEventListener("click", startDrill);
   }
 
   // ---------- Lesson menu ----------
@@ -506,6 +645,12 @@
     target = ""; segments = []; curSegIdx = -1; codeQueue = [];
     if (mode === "english") {
       target = shuffle(WORDS).slice(0, 90).join(" "); singleRun = false;
+    } else if (mode === "drill") {
+      singleRun = false; const w = weakKeys();
+      target = buildDrillLine(w) + "  " + buildDrillLine(w) + "  " + buildDrillLine(w);
+    } else if (mode === "custom") {
+      singleRun = true; target = customText;
+      segments.push({ start: 0, title: "Your code", explain: "A snippet you pasted in.", lang: customLang, level: "custom", lessonNo: null });
     } else if (lang === "mix") {
       singleRun = false; feedSnippets = allLessonsFlat(); orderMode = false; pushSnippet(nextSnippet());
     } else {
@@ -516,11 +661,15 @@
       seq.forEach((sn, i) => { if (i > 0) target += "\n\n"; pushSnippet(sn); });
     }
   }
-  function extend() { if (mode === "english") target += " " + shuffle(WORDS).slice(0, 50).join(" "); else { target += "\n\n"; pushSnippet(nextSnippet()); } }
+  function extend() {
+    if (mode === "english") target += " " + shuffle(WORDS).slice(0, 50).join(" ");
+    else if (mode === "drill") target += "  " + buildDrillLine(weakKeys());
+    else { target += "\n\n"; pushSnippet(nextSnippet()); }
+  }
   function maybeExtend() { if (!singleRun && pos > target.length - 80) extend(); }
 
   function updateConcept() {
-    if (mode !== "code") { conceptBar.classList.add("hidden"); conceptExplain.classList.add("hidden"); return; }
+    if (mode !== "code" && mode !== "custom") { conceptBar.classList.add("hidden"); conceptExplain.classList.add("hidden"); return; }
     conceptBar.classList.remove("hidden");
     let idx = 0;
     for (let i = 0; i < segments.length; i++) { if (segments[i].start <= pos) idx = i; else break; }
@@ -534,6 +683,21 @@
     }
   }
 
+  // Countable characters = those a perfect run credits as correctChars: every char
+  // except indentation that auto-skips after a newline (those advance pos but not WPM).
+  // The ghost's speed comes from net WPM, so we scale its position pace by length/countable
+  // to make it traverse the full target in the same wall-clock time the best run took.
+  function countableLen(str) {
+    let n = 0, afterNL = false;
+    for (let i = 0; i < str.length; i++) {
+      const c = str[i];
+      if (c === "\n") { n++; afterNL = true; continue; }
+      if (afterNL && (c === " " || c === "\t")) continue;   // auto-skipped indentation
+      afterNL = false; n++;
+    }
+    return n;
+  }
+
   // ---------- Start / timer ----------
   function startGame() {
     state = "running"; justStarted = true;
@@ -542,9 +706,19 @@
     streamEl.className = "stream" + (mode === "english" ? " english" : "");
     gameHint.innerHTML = mode === "english"
       ? 'Just start typing &nbsp;·&nbsp; <kbd>space</kbd> next word &nbsp;·&nbsp; <kbd>Esc</kbd> restart'
-      : (singleRun
-          ? 'Type to the end to finish &nbsp;·&nbsp; <kbd>Enter</kbd> new line &nbsp;·&nbsp; indent auto-skips &nbsp;·&nbsp; <kbd>Esc</kbd> restart'
-          : 'Just start typing &nbsp;·&nbsp; <kbd>Enter</kbd> new line &nbsp;·&nbsp; indent auto-skips &nbsp;·&nbsp; <kbd>Esc</kbd> restart');
+      : mode === "drill"
+        ? 'Keep typing &nbsp;·&nbsp; targets the keys you miss most &nbsp;·&nbsp; <kbd>Esc</kbd> restart'
+        : (singleRun
+            ? 'Type to the end to finish &nbsp;·&nbsp; <kbd>Enter</kbd> new line &nbsp;·&nbsp; indent auto-skips &nbsp;·&nbsp; <kbd>Esc</kbd> restart'
+            : 'Just start typing &nbsp;·&nbsp; <kbd>Enter</kbd> new line &nbsp;·&nbsp; indent auto-skips &nbsp;·&nbsp; <kbd>Esc</kbd> restart');
+    // Ghost pacer: load the best pace for this exact run type and race it live.
+    ghostActive = false; ghostIndex = -1; ghostCps = 0;
+    if (stats.ghostOn) {
+      const best = parseInt(storageGet(BEST_PREFIX + "_" + computeTag().tag) || "0", 10) || 0;
+      if (best > 0) { ghostActive = true; ghostCps = (best * 5 / 60) * (target.length / (countableLen(target) || 1)); }
+    }
+    hudGhostWrap.classList.toggle("hidden", !ghostActive);
+    hudGhost.textContent = "0"; hudGhost.className = "val ghost-val";
     show(gamePanel);
     conceptExplain.classList.add("hidden");
     hudTime.textContent = singleRun ? "0" : duration; hudWpm.textContent = "0"; hudAcc.textContent = "100%"; hudChars.textContent = "0";
@@ -555,6 +729,7 @@
   function beginTimer() { startTime = performance.now(); timerId = setInterval(tick, 100); }
   function tick() {
     const elapsed = (performance.now() - startTime) / 1000;
+    if (ghostActive) { const gi = Math.min(target.length, Math.round(ghostCps * elapsed)); if (gi !== ghostIndex) { ghostIndex = gi; render(); } }
     if (singleRun) { hudTime.textContent = Math.floor(elapsed); liveStats(elapsed); }
     else { const remaining = Math.max(0, duration - elapsed); hudTime.textContent = Math.ceil(remaining); liveStats(elapsed); if (remaining <= 0) finish(); }
   }
@@ -563,6 +738,11 @@
     hudWpm.textContent = mins > 0 ? Math.round((correctChars / 5) / mins) : 0;
     hudAcc.textContent = (totalKeys > 0 ? Math.round((correctChars / totalKeys) * 100) : 100) + "%";
     hudChars.textContent = totalKeys;
+    if (ghostActive) {
+      const delta = pos - ghostIndex;
+      hudGhost.textContent = (delta >= 0 ? "+" : "−") + Math.abs(delta);
+      hudGhost.className = "val ghost-val " + (delta >= 0 ? "ahead" : "behind");
+    }
   }
 
   // ---------- Input ----------
@@ -611,11 +791,13 @@
   function render() {
     let from = Math.max(0, pos - 170);
     while (from > 0 && target[from - 1] !== "\n") from--;
+    from = Math.max(from, pos - 400);   // hard floor: newline-free streams (drill/english/long paste) stay bounded
     const to = Math.min(target.length, pos + 280);
     let html = "";
     for (let i = from; i < to; i++) {
       const ch = target[i]; const isCaret = i === pos; let cls = "ch";
       if (i < pos) cls += (typed[i] === target[i]) ? " ok" : " bad";
+      if (ghostActive && i === ghostIndex && i !== pos) cls += " ghost";
       const idAttr = isCaret ? ' id="crt"' : "";
       if (ch === "\n") { if (isCaret) cls += " caret"; html += '<span class="' + cls + ' nl"' + idAttr + '>↵</span>\n'; }
       else if (ch === " ") { if (i < pos && typed[i] !== " ") cls += " badspace"; if (isCaret) cls += " caret"; html += '<span class="' + cls + '"' + idAttr + '> </span>'; }
@@ -640,13 +822,7 @@
     const acc = totalKeys > 0 ? Math.round((correctChars / totalKeys) * 100) : 100;
     resWpm.textContent = wpm; resAcc.textContent = acc + "%"; resChars.textContent = totalKeys; resErr.textContent = totalKeys - correctChars;
 
-    let tag, labelName;
-    if (mode === "code" && lang !== "mix") {
-      const lvl = LANG_NAMES[lang] + " · " + LEVEL_NAMES[level];
-      if (lesson !== "all") { tag = "code_" + lang + "_" + level + "_L" + lesson; labelName = lvl + " · Lesson " + (Number(lesson) + 1); }
-      else { tag = "code_" + lang + "_" + level + "_all"; labelName = lvl + " · All"; }
-    } else if (mode === "code") { tag = "code_mix_" + duration; labelName = "Mix · " + duration + "s"; }
-    else { tag = "english_" + duration; labelName = "Words · " + duration + "s"; }
+    const ct = computeTag(); const tag = ct.tag, labelName = ct.label;
     const key = BEST_PREFIX + "_" + tag;
     let best = parseInt(storageGet(key) || "0", 10) || 0;
     if (wpm > best && wpm <= 400) {
@@ -663,18 +839,26 @@
     if (curLesson && curLesson.output) { outPre.textContent = curLesson.output; outBox.classList.remove("hidden"); }
     else outBox.classList.add("hidden");
     // "Edit & run" only where we have an in-browser runtime (Python, JavaScript, SQL).
-    const runnable = single && (lang === "python" || lang === "javascript" || lang === "sql");
+    const RUNNABLE = { python: 1, javascript: 1, sql: 1 };
+    const runnable = (single && RUNNABLE[lang]) || (mode === "custom" && RUNNABLE[customLang]);
     editRunBtn.classList.toggle("hidden", !runnable);
-    if (runnable && curLesson) { resCode = curLesson.code; resLang = lang; resOutput = curLesson.output || ""; }
+    if (runnable) {
+      if (mode === "custom") { resCode = customText; resLang = customLang; resOutput = ""; }
+      else if (curLesson) { resCode = curLesson.code; resLang = lang; resOutput = curLesson.output || ""; }
+    }
     navWrap.classList.toggle("hidden", !single);
     againBtn.classList.toggle("hidden", single);
     menuBtn.classList.toggle("hidden", !lessonsMode);
-    if (!single) againBtn.innerHTML = lessonsMode ? "Practice again &nbsp;↵" : "Race again &nbsp;↵";
+    if (!single) {
+      const racey = mode === "english" || mode === "drill" || (mode === "code" && lang === "mix");
+      againBtn.innerHTML = racey ? "Race again &nbsp;↵" : "Practice again &nbsp;↵";
+    }
     if (single) {
       const flat = flatLessons();
       const ci = flat.findIndex((f) => f.level === level && f.idx === Number(lesson));
       prevBtn.disabled = (ci <= 0);
       nextBtn.disabled = (ci < 0 || ci >= flat.length - 1);
+      nextBtn.innerHTML = "Next &nbsp;→";   // reset in case a prior review left it "✓ Finish review"
       resultHint.innerHTML = nextBtn.disabled ? 'Last lesson 🎉 &nbsp;·&nbsp; <kbd>Enter</kbd>/<kbd>Esc</kbd> try again' : '<kbd>Enter</kbd> next lesson &nbsp;·&nbsp; <kbd>Esc</kbd> try again';
     } else {
       resultHint.innerHTML = 'Press <kbd>Enter</kbd> or <kbd>Esc</kbd> to replay';
@@ -728,7 +912,42 @@
   homeBtn.addEventListener("click", goHome);
   homeLink.addEventListener("click", goHome);
   reviewBtn.addEventListener("click", startReview);
-  function goHome() { if (timerId) clearInterval(timerId); state = "idle"; inReview = false; show(setupPanel); }
+  function goHome() {
+    if (timerId) clearInterval(timerId);
+    state = "idle"; inReview = false;
+    // drill is a synthetic mode with no setup button — fall back to the active mode tab.
+    const act = modesEl.querySelector(".active"); if (act && mode !== act.dataset.mode) { mode = act.dataset.mode; refreshSetup(); }
+    show(setupPanel);
+  }
+
+  // ---------- Weak-key drill (keybr-style) ----------
+  function startDrill() { if (!weakKeys().length) return; mode = "drill"; inReview = false; startGame(); }
+
+  // ---------- "Your own code" (SpeedCoder-style) ----------
+  function openCustom() {
+    customLang = stats.customLang || "plain";
+    customCodeEl.value = stats.customCode || "";
+    [...customLangs.children].forEach((b) => b.classList.toggle("active", b.dataset.clang === customLang));
+    show(customPanel); customCodeEl.focus();
+  }
+  function normalizeCustom(s) {
+    const lines = s.replace(/\r\n/g, "\n").replace(/\t/g, "  ").split("\n").map((l) => l.replace(/\s+$/, ""));
+    while (lines.length && lines[0] === "") lines.shift();
+    while (lines.length && lines[lines.length - 1] === "") lines.pop();
+    const out = []; let blanks = 0;
+    for (const l of lines) { if (l === "") { if (++blanks > 1) continue; } else blanks = 0; out.push(l); }
+    return out.join("\n").slice(0, 4000);
+  }
+  customBack.addEventListener("click", () => show(setupPanel));
+  customClear.addEventListener("click", () => { customCodeEl.value = ""; customCodeEl.focus(); });
+  customLangs.addEventListener("click", (e) => { const b = e.target.closest("[data-clang]"); if (!b) return; sel(customLangs, b); customLang = b.dataset.clang; });
+  customStart.addEventListener("click", () => {
+    const cleaned = normalizeCustom(customCodeEl.value);
+    if (!cleaned) { customCodeEl.focus(); return; }
+    customText = cleaned;
+    stats.customCode = customText; stats.customLang = customLang; saveStats();
+    mode = "custom"; inReview = false; startGame();
+  });
 
   // ---------- Playground: edit & run the code in the browser ----------
   const SQL_FIXTURE =

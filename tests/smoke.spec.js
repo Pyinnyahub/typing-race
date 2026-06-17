@@ -202,3 +202,143 @@ test("progress dashboard opens with stats", async ({ page }) => {
   await expect(page.locator("#statsBody .stat-card")).toHaveCount(6);
   await expect(page.locator("#statsBody .pbar-row")).toHaveCount(5); // one per language
 });
+
+// Seed the stats blob, then reload so the app picks it up from localStorage.
+async function seedStats(page, patch) {
+  await page.goto(FILE);
+  await page.evaluate((p) => {
+    const s = JSON.parse(localStorage.getItem("typingRaceStats_v1") || "{}");
+    Object.assign(s, p);
+    localStorage.setItem("typingRaceStats_v1", JSON.stringify(s));
+  }, patch);
+  await page.reload();
+}
+
+test("weak-key drill: dashboard chips + drill button launch a timed drill", async ({ page }) => {
+  await seedStats(page, { keys: { "{": { miss: 5, total: 10 }, "}": { miss: 4, total: 10 }, ";": { miss: 6, total: 12 } } });
+  await expect(page.locator("#drillBtn")).toBeVisible(); // 3 weak keys -> setup shortcut shows
+  await page.click("#progressBtn");
+  await expect(page.locator("#statsBody .key-chip")).toHaveCount(3);
+  await page.click("#weakDrillBtn");
+  await expect(page.locator("#gamePanel")).toBeVisible();
+  await expect(page.locator("#hudTime")).toHaveText("30"); // drill is a timed run
+  await expect(page.locator("#gameHint")).toContainText("miss");
+});
+
+test("drill button is hidden without enough weak-key data", async ({ page }) => {
+  await page.goto(FILE);
+  await expect(page.locator("#drillBtn")).toBeHidden();
+});
+
+test("ghost pacer toggle persists and shows a vs-best HUD when a best exists", async ({ page }) => {
+  await page.goto(FILE);
+  await page.click("#ghostBtn");
+  await expect(page.locator("#ghostBtn")).toContainText("On");
+  await expect(page.locator("#ghostBtn")).toHaveClass(/on/);
+  await page.reload();
+  await expect(page.locator("#ghostBtn")).toContainText("On"); // remembered
+  // a best for python beginner lesson 0 makes the ghost active for that run
+  await page.evaluate(() => localStorage.setItem("typingRaceDevBest_code_python_beginner_L0", "40"));
+  await page.click("#startBtn");
+  await page.click('#menuList [data-lesson="0"]');
+  await expect(page.locator("#gamePanel")).toBeVisible();
+  await expect(page.locator("#hudGhostWrap")).toBeVisible();
+});
+
+test("ghost HUD stays hidden when no best exists yet", async ({ page }) => {
+  await page.goto(FILE);
+  await page.click("#ghostBtn"); // on, but no stored best for this lesson
+  await page.click("#startBtn");
+  await page.click('#menuList [data-lesson="0"]');
+  await expect(page.locator("#gamePanel")).toBeVisible();
+  await expect(page.locator("#hudGhostWrap")).toBeHidden();
+});
+
+test("own-code mode: paste, practice, edit & run, and remember it", async ({ page }) => {
+  await page.goto(FILE);
+  await page.click('#modes [data-mode="custom"]');
+  await expect(page.locator("#langWrap")).toBeHidden();
+  await page.click("#startBtn");
+  await expect(page.locator("#customPanel")).toBeVisible();
+  await page.click('#customLangs [data-clang="javascript"]');
+  await page.fill("#customCode", 'console.log("hi")');
+  await page.click("#customStart");
+  await expect(page.locator("#gamePanel")).toBeVisible();
+  await expect(page.locator("#conceptName")).toContainText("Your code");
+  expect(await autotype(page)).toBe(true);
+  await expect(page.locator("#resultPanel")).toBeVisible();
+  await expect(page.locator("#resBest")).toContainText("Your code");
+  await expect(page.locator("#editRunBtn")).toBeVisible(); // JS is runnable
+  // remembered across reloads
+  await page.reload();
+  await page.click('#modes [data-mode="custom"]');
+  await page.click("#startBtn");
+  await expect(page.locator("#customCode")).toHaveValue('console.log("hi")');
+});
+
+test("own-code Edit & run executes the pasted JavaScript", async ({ page }) => {
+  await page.goto(FILE);
+  await page.click('#modes [data-mode="custom"]');
+  await page.click("#startBtn");
+  await page.click('#customLangs [data-clang="javascript"]');
+  await page.fill("#customCode", 'console.log(2 + 5)');
+  await page.click("#customStart");
+  await autotype(page);
+  await page.click("#editRunBtn");
+  await expect(page.locator("#playPanel")).toBeVisible();
+  await page.click("#runBtn");
+  await expect(page.locator("#playOut")).toHaveText("7");
+});
+
+test("backspace + retype counts a key once (no weak-key double-count)", async ({ page }) => {
+  await page.goto(FILE);
+  await page.click('#modes [data-mode="custom"]');
+  await page.click("#startBtn");
+  await page.fill("#customCode", "xy");
+  await page.click("#customStart");
+  await page.evaluate(() => {
+    const cap = document.getElementById("capture");
+    const k = (key) => cap.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+    k("z"); k("Backspace"); k("x"); k("y"); // fumble, correct, finish
+  });
+  await expect(page.locator("#resultPanel")).toBeVisible();
+  const keys = await page.evaluate(() => JSON.parse(localStorage.getItem("typingRaceStats_v1")).keys);
+  expect(keys["x"]).toEqual({ miss: 0, total: 1 }); // committed once, final state is correct
+  expect(keys["y"]).toEqual({ miss: 0, total: 1 });
+});
+
+test("drill/custom runs do not inflate the global Best WPM", async ({ page }) => {
+  await seedStats(page, { bestWpm: 7 });
+  await page.click('#modes [data-mode="custom"]');
+  await page.click("#startBtn");
+  await page.fill("#customCode", "ab");
+  await page.click("#customStart");
+  await autotype(page);
+  await expect(page.locator("#resultPanel")).toBeVisible();
+  const best = await page.evaluate(() => JSON.parse(localStorage.getItem("typingRaceStats_v1")).bestWpm);
+  expect(best).toBe(7); // a custom run must not change the headline Best WPM
+});
+
+test("own-code result says 'Practice again', not 'Race again'", async ({ page }) => {
+  await page.goto(FILE);
+  await page.click('#modes [data-mode="custom"]');
+  await page.click("#startBtn");
+  await page.fill("#customCode", "ab");
+  await page.click("#customStart");
+  await autotype(page);
+  await expect(page.locator("#againBtn")).toContainText("Practice again");
+});
+
+test("Next button label resets after a review session", async ({ page }) => {
+  await seedStats(page, { srs: { "python|beginner|1": { box: 0, interval: 1, due: "2000-01-01", acc: 80 } } });
+  await page.click("#reviewBtn");
+  await autotype(page);
+  await expect(page.locator("#nextBtn")).toContainText("Finish review");
+  await page.click("#nextBtn"); // finishes review -> setup
+  await expect(page.locator("#setupPanel")).toBeVisible();
+  await page.click("#startBtn");
+  await page.click('#menuList [data-lesson="0"]'); // a non-last single lesson
+  await autotype(page);
+  await expect(page.locator("#nextBtn")).toContainText("Next");
+  await expect(page.locator("#nextBtn")).not.toContainText("Finish review");
+});
